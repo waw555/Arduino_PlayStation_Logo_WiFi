@@ -45,6 +45,8 @@
 #define RANDOM_DELAY_MAX_MODE_4 1200UL
 #define PULSE_INTERVAL_MODE_5_MIN 5UL
 #define PULSE_INTERVAL_MODE_5_MAX 20UL
+#define LIGHTNING_FADE_INTERVAL 6UL
+#define LIGHTNING_FADE_STEP_DOWN 2
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
@@ -92,6 +94,7 @@ uint16_t mode6Interval[4] = {0, 0, 0, 0};
 
 uint8_t mode8Brightness[4] = {0, 0, 0, 0};
 bool mode8DirectionUp[4] = {true, true, true, true};
+bool mode8Active[4] = {false, false, false, false};
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 
@@ -226,7 +229,7 @@ void loop() {
   {
     //oldMode = currentMode;
     currentMode++;
-    if (currentMode > 8) currentMode = 0;
+    if (currentMode > 10) currentMode = 0;
     switch(currentMode){
       case 0:
         setLedsOff();
@@ -298,7 +301,8 @@ void loop() {
         setLedsOff();
         for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
         randomLedIndex = random(countLedsPin);
-        randomLedDirectionUp = true;
+        randomLedBrightness[randomLedIndex] = globalBrightness;
+        randomLedDirectionUp = false;
         timerMode = millis();
         Serial.print("Mode = ");
         Serial.println(currentMode);
@@ -307,8 +311,27 @@ void loop() {
         setLedsOff();
         for (uint8_t i = 0; i < countLedsPin; i++) {
           mode8Brightness[i] = 0;
-          mode8DirectionUp[i] = true;
+          mode8DirectionUp[i] = false;
+          mode8Active[i] = false;
         }
+        timerMode = millis();
+        Serial.print("Mode = ");
+        Serial.println(currentMode);
+      break;
+      case 9:
+        setLedsOff();
+        counterBrightness = 0;
+        val = 0;
+        mode2Step = 0;
+        timerMode = millis();
+        Serial.print("Mode = ");
+        Serial.println(currentMode);
+      break;
+      case 10:
+        setLedsOff();
+        counterBrightness = 0;
+        val = countLedsPin - 1;
+        mode2Step = 0;
         timerMode = millis();
         Serial.print("Mode = ");
         Serial.println(currentMode);
@@ -371,17 +394,17 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Квадрат -> Крест -> Круг -> Треугольник
-            if (counterBrightness > 0) {
-              counterBrightness--;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
+            if (counterBrightness < 255) {
+              counterBrightness++;
+              analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
             }
-            if (counterBrightness == 0) {
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
               if (val == 0) {
                 mode2Step = 3;
                 timerMode = millis();
               } else {
                 val--;
-                counterBrightness = 255;
               }
             }
           }
@@ -389,7 +412,7 @@ void loop() {
         if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
           mode2Step = 2;
           val = countLedsPin - 1;
-          counterBrightness = 255;
+          counterBrightness = 0;
         } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
           mode2Step = 0;
           val = 0;
@@ -413,17 +436,17 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Треугольник -> Круг -> Крест -> Квадрат
-            if (counterBrightness > 0) {
-              counterBrightness--;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
+            if (counterBrightness < 255) {
+              counterBrightness++;
+              analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
             }
-            if (counterBrightness == 0) {
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
               if (val >= countLedsPin - 1) {
                 mode2Step = 3;
                 timerMode = millis();
               } else {
                 val++;
-                counterBrightness = 255;
               }
             }
           }
@@ -431,7 +454,7 @@ void loop() {
         if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
           mode2Step = 2;
           val = 0;
-          counterBrightness = 255;
+          counterBrightness = 0;
         } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
           mode2Step = 0;
           val = countLedsPin - 1;
@@ -515,36 +538,130 @@ void loop() {
         }
           break;
       case 7:
-        if (millis() - timerMode >= RANDOM_FADE_INTERVAL_MODE_4) {
+        if (millis() - timerMode >= LIGHTNING_FADE_INTERVAL) {
           timerMode = millis();
-          if (randomLedDirectionUp) {
-            if (randomLedBrightness[randomLedIndex] < globalBrightness) randomLedBrightness[randomLedIndex]++;
-            else randomLedDirectionUp = false;
+          if (randomLedBrightness[randomLedIndex] > LIGHTNING_FADE_STEP_DOWN) {
+            randomLedBrightness[randomLedIndex] -= LIGHTNING_FADE_STEP_DOWN;
           } else {
-            if (randomLedBrightness[randomLedIndex] > 0) randomLedBrightness[randomLedIndex]--;
-            else {
-              randomLedIndex = random(countLedsPin);
-              randomLedDirectionUp = true;
+            randomLedBrightness[randomLedIndex] = 0;
+            randomLedIndex = random(countLedsPin);
+            randomLedBrightness[randomLedIndex] = globalBrightness;
+          }
+        }
+        for (uint8_t i = 0; i < countLedsPin; i++) analogWrite(ledPin[i], crt3_8(randomLedBrightness[i]));
+          break;
+      case 8:
+        if (millis() - timerMode >= LIGHTNING_FADE_INTERVAL) {
+          timerMode = millis();
+
+          uint8_t activeCount = 0;
+          for (uint8_t i = 0; i < countLedsPin; i++) if (mode8Active[i]) activeCount++;
+
+          if (activeCount == 0) {
+            uint8_t targetCount = random(1, countLedsPin + 1);
+            while (targetCount > 0) {
+              uint8_t idx = random(countLedsPin);
+              if (!mode8Active[idx]) {
+                mode8Active[idx] = true;
+                mode8Brightness[idx] = globalBrightness;
+                targetCount--;
+              }
+            }
+          }
+
+          for (uint8_t i = 0; i < countLedsPin; i++) {
+            if (mode8Active[i]) {
+              if (mode8Brightness[i] > LIGHTNING_FADE_STEP_DOWN) {
+                mode8Brightness[i] -= LIGHTNING_FADE_STEP_DOWN;
+              } else {
+                mode8Brightness[i] = 0;
+                mode8Active[i] = false;
+              }
+            }
+            analogWrite(ledPin[i], crt3_8(mode8Brightness[i]));
+          }
+        }
+          break;
+      case 9:
+        if (millis() - timerMode >= FADE_TIME_MODE_2){
+          timerMode = millis();
+          if (mode2Step == 0) {
+            counterBrightness++;
+            analogWrite(ledPin[val], crt3_8(counterBrightness));
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
+              val++;
+              if (val >= countLedsPin) {
+                mode2Step = 1;
+                timerMode = millis();
+                val = 0;
+              }
+            }
+          } else if (mode2Step == 2) {
+            if (counterBrightness < 255) {
+              counterBrightness++;
+              analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
+            }
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
+              val++;
+              if (val >= countLedsPin) {
+                mode2Step = 3;
+                timerMode = millis();
+              }
             }
           }
         }
-        for (uint8_t i = 0; i < countLedsPin; i++) analogWrite(ledPin[i], randomLedBrightness[i]);
+        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {
+          mode2Step = 2;
+          val = 0;
+          counterBrightness = 0;
+        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {
+          mode2Step = 0;
+          val = 0;
+          counterBrightness = 0;
+        }
           break;
-      case 8:
-        if (millis() - timerMode >= RANDOM_FADE_INTERVAL_MODE_4) {
+      case 10:
+        if (millis() - timerMode >= FADE_TIME_MODE_2){
           timerMode = millis();
-          for (uint8_t i = 0; i < countLedsPin; i++) {
-            if (mode8Brightness[i] == 0 && random(100) < 10) {
-              mode8DirectionUp[i] = true;
+          if (mode2Step == 0) {
+            counterBrightness++;
+            analogWrite(ledPin[val], crt3_8(counterBrightness));
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
+              if (val == 0) {
+                mode2Step = 1;
+                timerMode = millis();
+                val = countLedsPin - 1;
+              } else {
+                val--;
+              }
             }
-            if (mode8DirectionUp[i]) {
-              if (mode8Brightness[i] < globalBrightness) mode8Brightness[i]++;
-              else mode8DirectionUp[i] = false;
-            } else if (mode8Brightness[i] > 0) {
-              mode8Brightness[i]--;
+          } else if (mode2Step == 2) {
+            if (counterBrightness < 255) {
+              counterBrightness++;
+              analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
             }
-            analogWrite(ledPin[i], mode8Brightness[i]);
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
+              if (val == 0) {
+                mode2Step = 3;
+                timerMode = millis();
+              } else {
+                val--;
+              }
+            }
           }
+        }
+        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {
+          mode2Step = 2;
+          val = countLedsPin - 1;
+          counterBrightness = 0;
+        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {
+          mode2Step = 0;
+          val = countLedsPin - 1;
+          counterBrightness = 0;
         }
           break;
       case 100:
