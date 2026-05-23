@@ -80,6 +80,8 @@ uint8_t randomLedIndex = 0;
 bool randomLedDirectionUp = true;
 uint8_t randomLedBrightness[4] = {0, 0, 0, 0};
 uint8_t pulseBrightness[4] = {0, 0, 0, 0};
+uint8_t shuffledLedOrder[4] = {0, 1, 2, 3};
+uint8_t shuffledLedOrderIndex = 0;
 bool pulseDirectionUp[4] = {true, true, true, true};
 uint32_t pulseLedTimer[4] = {0, 0, 0, 0};
 uint16_t pulseLedInterval[4] = {0, 0, 0, 0};
@@ -217,7 +219,7 @@ void loop() {
   {
     //oldMode = currentMode;
     currentMode++;
-    if (currentMode > 5) currentMode = 0;
+    if (currentMode > 6) currentMode = 0;
     switch(currentMode){
       case 0:
         setLedsOff();
@@ -269,6 +271,19 @@ void loop() {
           pulseLedTimer[i] = millis();
           pulseLedInterval[i] = random(PULSE_INTERVAL_MODE_5_MIN, PULSE_INTERVAL_MODE_5_MAX + 1);
         }
+        timerMode = millis();
+        Serial.print("Mode = ");
+        Serial.println(currentMode);
+      break;
+      case 6:
+        setLedsOff();
+        for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
+        shuffleLedOrder();
+        shuffledLedOrderIndex = 0;
+        randomLedIndex = shuffledLedOrder[shuffledLedOrderIndex];
+        randomLedDirectionUp = true;
+        randomModeDelay = 0;
+        randomModeDelayStart = 0;
         timerMode = millis();
         Serial.print("Mode = ");
         Serial.println(currentMode);
@@ -456,6 +471,44 @@ void loop() {
           crt3_8(pulseBrightness[3])
         );
           break;
+      case 6:
+        if (millis() - timerMode >= RANDOM_FADE_INTERVAL_MODE_4) {
+          timerMode = millis();
+
+          if (randomLedDirectionUp) {
+            if (randomLedBrightness[randomLedIndex] < globalBrightness) {
+              randomLedBrightness[randomLedIndex]++;
+            } else {
+              randomLedDirectionUp = false;
+            }
+          } else {
+            if (randomLedBrightness[randomLedIndex] > 0) {
+              randomLedBrightness[randomLedIndex]--;
+            } else if (randomModeDelay == 0) {
+              randomModeDelay = random(RANDOM_DELAY_MIN_MODE_4, RANDOM_DELAY_MAX_MODE_4 + 1);
+              randomModeDelayStart = millis();
+            }
+          }
+        }
+
+        if (!randomLedDirectionUp && randomLedBrightness[randomLedIndex] == 0 && randomModeDelay > 0) {
+          if (millis() - randomModeDelayStart >= randomModeDelay) {
+            randomModeDelay = 0;
+            shuffledLedOrderIndex++;
+            if (shuffledLedOrderIndex >= countLedsPin) {
+              shuffleLedOrder();
+              shuffledLedOrderIndex = 0;
+            }
+            randomLedIndex = shuffledLedOrder[shuffledLedOrderIndex];
+            randomLedDirectionUp = true;
+            timerMode = millis();
+          }
+        }
+
+        for (uint8_t i = 0; i < countLedsPin; i++) {
+          analogWrite(ledPin[i], crt3_8(randomLedBrightness[i]));
+        }
+          break;
       case 100:
         // если светодиод включен и светится больше чем надо
         if(millis() - timerMode >= 50 && !flag)
@@ -509,6 +562,17 @@ void showMinMaxBrightness(){
     currentMode = 100;
   }else{
     currentMode = oldMode;
+  }
+}
+
+
+void shuffleLedOrder() {
+  for (uint8_t i = 0; i < countLedsPin; i++) shuffledLedOrder[i] = i;
+  for (int8_t i = countLedsPin - 1; i > 0; i--) {
+    uint8_t j = random(i + 1);
+    uint8_t tmp = shuffledLedOrder[i];
+    shuffledLedOrder[i] = shuffledLedOrder[j];
+    shuffledLedOrder[j] = tmp;
   }
 }
 
