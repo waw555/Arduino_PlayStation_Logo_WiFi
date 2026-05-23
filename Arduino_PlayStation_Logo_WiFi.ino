@@ -33,7 +33,7 @@
 
 #define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
 #define MIN_BRIGHTNESS 5  //Минимальная яркость 255-0
-#define MIN_BRIGHTNESS_FADE_MODE 10  //Минимальная яркость в режиме плавного затухания 255-0
+#define MIN_BRIGHTNESS_FADE_MODE 0  //Минимальная яркость в режиме плавного затухания 255-0
 #define STEP_AUTO_BRIGHTNESS 5  //Шаг регулировки яркости по удержанию кнопки
 #define STEP_MANUAL_BRIGHTNESS 10  //Шаг регулировки яркости по 1 нажатию
 #define FADE_TIME_MODE_1 20 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
