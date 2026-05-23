@@ -40,6 +40,10 @@
 #define FADE_TIME_MODE_2 5 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
 #define HOLD_ON_TIME_MODE_2 5000UL // Пауза после полного включения фигур (5 секунд)
 #define HOLD_OFF_TIME_MODE_2 5000UL // Пауза после полного выключения фигур (5 секунд)
+#define RANDOM_FADE_INTERVAL_MODE_4 8UL
+#define RANDOM_DELAY_MIN_MODE_4 150UL
+#define RANDOM_DELAY_MAX_MODE_4 1200UL
+#define PULSE_INTERVAL_MODE_5 8UL
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
@@ -71,7 +75,12 @@ uint8_t oldMode = 0;
 uint8_t val = 0;
 uint8_t k = 0;
 uint8_t mode2Step = 0;
-uint32_t previousMillis, currentMillis, timerMode;
+uint8_t randomLedIndex = 0;
+bool randomLedDirectionUp = true;
+uint8_t randomLedBrightness[4] = {0, 0, 0, 0};
+uint8_t pulseValue = 0;
+bool pulseDirectionUp = true;
+uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 
 struct Data {
   bool powerOn = false;
@@ -110,6 +119,7 @@ void setup() {
   globalBrightness = data.globalBrightness;
   currentMode = data.currentMode;
   oldMode = currentMode;
+  randomSeed(micros());
 }
 
 void loop() {
@@ -203,7 +213,7 @@ void loop() {
   {
     //oldMode = currentMode;
     currentMode++;
-    if (currentMode > 3) currentMode = 0;
+    if (currentMode > 5) currentMode = 0;
     switch(currentMode){
       case 0:
         setLedsOff();
@@ -237,7 +247,23 @@ void loop() {
         Serial.println(currentMode);
       break;
       case 4:
+        setLedsOff();
+        for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
+        randomLedIndex = random(countLedsPin);
+        randomLedDirectionUp = true;
+        randomModeDelay = 0;
+        timerMode = millis();
+        Serial.print("Mode = ");
+        Serial.println(currentMode);
+      break;
       case 5:
+        setLedsOff();
+        pulseValue = 0;
+        pulseDirectionUp = true;
+        timerMode = millis();
+        Serial.print("Mode = ");
+        Serial.println(currentMode);
+      break;
       case 100:
         setLedsOff();
         timerMode = millis();
@@ -245,6 +271,7 @@ void loop() {
         flag = true;
         Serial.print("Mode = ");
         Serial.println(currentMode);
+      break;
       default:
         setLedsOff();
         timerMode = millis();
@@ -363,10 +390,49 @@ void loop() {
         }
           break;
       case 4:
-        currentMode = 0;
+        if (millis() - timerMode >= RANDOM_FADE_INTERVAL_MODE_4) {
+          timerMode = millis();
+
+          if (randomLedDirectionUp) {
+            if (randomLedBrightness[randomLedIndex] < globalBrightness) {
+              randomLedBrightness[randomLedIndex]++;
+            } else {
+              randomLedDirectionUp = false;
+            }
+          } else {
+            if (randomLedBrightness[randomLedIndex] > 0) {
+              randomLedBrightness[randomLedIndex]--;
+            } else if (randomModeDelay == 0) {
+              randomModeDelay = random(RANDOM_DELAY_MIN_MODE_4, RANDOM_DELAY_MAX_MODE_4 + 1);
+            }
+          }
+        }
+
+        if (!randomLedDirectionUp && randomLedBrightness[randomLedIndex] == 0 && randomModeDelay > 0) {
+          if (millis() - timerMode >= randomModeDelay) {
+            randomModeDelay = 0;
+            randomLedIndex = random(countLedsPin);
+            randomLedDirectionUp = true;
+            timerMode = millis();
+          }
+        }
+
+        for (uint8_t i = 0; i < countLedsPin; i++) {
+          analogWrite(ledPin[i], crt3_8(randomLedBrightness[i]));
+        }
           break;
       case 5:
-        currentMode = 0;
+        if (millis() - timerMode >= PULSE_INTERVAL_MODE_5) {
+          timerMode = millis();
+          if (pulseDirectionUp) {
+            if (pulseValue < globalBrightness) pulseValue++;
+            else pulseDirectionUp = false;
+          } else {
+            if (pulseValue > 0) pulseValue--;
+            else pulseDirectionUp = true;
+          }
+        }
+        setLedsBrightness(crt3_8(pulseValue), crt3_8(pulseValue), crt3_8(pulseValue), crt3_8(pulseValue));
           break;
       case 100:
         // если светодиод включен и светится больше чем надо
