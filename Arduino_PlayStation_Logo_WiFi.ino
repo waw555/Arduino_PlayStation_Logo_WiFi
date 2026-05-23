@@ -38,7 +38,7 @@
 #define STEP_MANUAL_BRIGHTNESS 10  //Шаг регулировки яркости по 1 нажатию
 #define FADE_TIME_MODE_1 20 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
 #define FADE_TIME_MODE_2 5 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
-#define HOLD_ON_TIME_MODE_2 10000UL // Пауза после полного включения фигур (10 секунд)
+#define HOLD_ON_TIME_MODE_2 5000UL // Пауза после полного включения фигур (5 секунд)
 #define HOLD_OFF_TIME_MODE_2 5000UL // Пауза после полного выключения фигур (5 секунд)
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
@@ -230,9 +230,8 @@ void loop() {
       case 3:
         setLedsOff();
         counterBrightness = 0;
-        val = countLedsPin;
-        flag = true;
-        directionBrightness = true;
+        val = countLedsPin - 1;
+        mode2Step = 0;
         timerMode = millis();
         Serial.print("Mode = ");
         Serial.println(currentMode);
@@ -311,7 +310,7 @@ void loop() {
             }
           }
         }
-        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 10 сек во включенном состоянии
+        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
           mode2Step = 2;
           val = countLedsPin - 1;
           counterBrightness = 255;
@@ -324,42 +323,43 @@ void loop() {
       case 3:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
           timerMode = millis();
-          if(directionBrightness){
-            if(val <= 0 ){
-              counterBrightness++;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if(counterBrightness == 255) {
-                directionBrightness = !directionBrightness;
-              }
-            }else{
-              counterBrightness++;
-              flag = true;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if (counterBrightness == 255 && flag) {
-                counterBrightness = 0;
+          if (mode2Step == 0) {  // Плавно включаем фигуры: Квадрат -> Крест -> Круг -> Треугольник
+            counterBrightness++;
+            analogWrite(ledPin[val], crt3_8(counterBrightness));
+            if (counterBrightness == 255) {
+              counterBrightness = 0;
+              if (val == 0) {
+                mode2Step = 1;
+                timerMode = millis();
+                val = 0;
+              } else {
                 val--;
-                flag = false;
               }
             }
-          }else{
-            if (val >= countLedsPin){
-              val = countLedsPin - 1;
+          } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Треугольник -> Круг -> Крест -> Квадрат
+            if (counterBrightness > 0) {
               counterBrightness--;
               analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if (counterBrightness == 0) { 
-                directionBrightness = !directionBrightness;
-              }
-            }else{
-              counterBrightness--;
-              flag = true;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if (counterBrightness == 0 && flag) { 
-                counterBrightness = 255;
+            }
+            if (counterBrightness == 0) {
+              if (val >= countLedsPin - 1) {
+                mode2Step = 3;
+                timerMode = millis();
+              } else {
                 val++;
-                flag = false;
+                counterBrightness = 255;
               }
             }
           }
+        }
+        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
+          mode2Step = 2;
+          val = 0;
+          counterBrightness = 255;
+        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
+          mode2Step = 0;
+          val = countLedsPin - 1;
+          counterBrightness = 0;
         }
           break;
       case 4:
