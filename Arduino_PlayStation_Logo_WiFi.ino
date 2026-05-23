@@ -38,7 +38,8 @@
 #define STEP_MANUAL_BRIGHTNESS 10  //Шаг регулировки яркости по 1 нажатию
 #define FADE_TIME_MODE_1 20 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
 #define FADE_TIME_MODE_2 5 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
-#define PAUSE_TIME_MODE_2 100 // Время паузы между 
+#define HOLD_ON_TIME_MODE_2 10000UL // Пауза после полного включения фигур (10 секунд)
+#define HOLD_OFF_TIME_MODE_2 5000UL // Пауза после полного выключения фигур (5 секунд)
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
@@ -69,6 +70,7 @@ uint8_t currentMode = 0;
 uint8_t oldMode = 0;
 uint8_t val = 0;
 uint8_t k = 0;
+uint8_t mode2Step = 0;
 uint32_t previousMillis, currentMillis, timerMode;
 
 struct Data {
@@ -220,8 +222,7 @@ void loop() {
         setLedsOff();
         counterBrightness = 0;
         val = 0;
-        flag = true;
-        directionBrightness = true;
+        mode2Step = 0;
         timerMode = millis();
         Serial.print("Mode = ");
         Serial.println(currentMode);
@@ -282,38 +283,42 @@ void loop() {
       case 2:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
           timerMode = millis();
-          if(directionBrightness){
+          if (mode2Step == 0) {  // Плавно включаем фигуры: Треугольник -> Круг -> Крест -> Квадрат
             counterBrightness++;
-            flag = true;
             analogWrite(ledPin[val], crt3_8(counterBrightness));
-            if (counterBrightness == 255 && flag) {
+            if (counterBrightness == 255) {
               counterBrightness = 0;
               val++;
-              flag = false;
-            }
-            if(val >= countLedsPin) {
-              val = countLedsPin - 1;
-              directionBrightness = !directionBrightness;
-              counterBrightness = 255;
-            }
-          }else{
-            if (val <= 0 ){
-              counterBrightness--;
-              analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if (counterBrightness == 0) { 
-                directionBrightness = !directionBrightness;
+              if (val >= countLedsPin) {
+                mode2Step = 1;
+                timerMode = millis();
+                val = countLedsPin - 1;
               }
-            }else{
+            }
+          } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Квадрат -> Крест -> Круг -> Треугольник
+            if (counterBrightness > 0) {
               counterBrightness--;
-              flag = true;
               analogWrite(ledPin[val], crt3_8(counterBrightness));
-              if (counterBrightness == 0 && flag) { 
-                counterBrightness = 255;
+            }
+            if (counterBrightness == 0) {
+              if (val == 0) {
+                mode2Step = 3;
+                timerMode = millis();
+              } else {
                 val--;
-                flag = false;
+                counterBrightness = 255;
               }
             }
           }
+        }
+        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 10 сек во включенном состоянии
+          mode2Step = 2;
+          val = countLedsPin - 1;
+          counterBrightness = 255;
+        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
+          mode2Step = 0;
+          val = 0;
+          counterBrightness = 0;
         }
           break;
       case 3:
