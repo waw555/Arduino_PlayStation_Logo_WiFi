@@ -54,8 +54,8 @@ Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP); // Назад - btnPrev
 Button btnNext(BUTTON_PIN_NEXT, INPUT_PULLUP); // Веперд - btnNext
 Button btnMode(BUTTON_PIN_MODE, INPUT_PULLUP);  // Режим btnMode
 
-int ledPin[] = {LED_PIN_TRIANGLE, LED_PIN_CIRCLE, LED_PIN_X, LED_PIN_SQUARE};
-int countLedsPin = sizeof(ledPin) / sizeof(int);
+const uint8_t ledPin[] = {LED_PIN_TRIANGLE, LED_PIN_CIRCLE, LED_PIN_X, LED_PIN_SQUARE};
+const uint8_t countLedsPin = sizeof(ledPin) / sizeof(ledPin[0]);
 
 bool powerOn = false;
 bool dir = true;
@@ -138,7 +138,7 @@ void loop() {
       Serial.println(globalBrightness);
       showMinMaxBrightness();
     }else{ //Если яркость меньше максимальной
-      globalBrightness += STEP_MANUAL_BRIGHTNESS;
+      globalBrightness = min<uint8_t>(MAX_BRIGHTNESS, globalBrightness + STEP_MANUAL_BRIGHTNESS);
       Serial.print("Brightness = ");
       Serial.println(globalBrightness);
     }
@@ -150,7 +150,7 @@ void loop() {
   //Если удерживаем нажатой кнопку увеличения яркости
   if (btnNext.step()) {
     if (globalBrightness < MAX_BRIGHTNESS){ //Если яркость меньше или равна максимальной
-      globalBrightness += STEP_AUTO_BRIGHTNESS;
+      globalBrightness = min<uint8_t>(MAX_BRIGHTNESS, globalBrightness + STEP_AUTO_BRIGHTNESS);
       Serial.print("Brightness = ");
       Serial.println(globalBrightness);
     }else{
@@ -171,7 +171,7 @@ void loop() {
       Serial.println(globalBrightness);
       showMinMaxBrightness();
     }else{ //Если яркость больше минимальной
-      globalBrightness -= STEP_MANUAL_BRIGHTNESS;
+      globalBrightness = max<uint8_t>(MIN_BRIGHTNESS, globalBrightness - STEP_MANUAL_BRIGHTNESS);
       Serial.print("Brightness = ");
       Serial.println(globalBrightness);
     } 
@@ -183,7 +183,7 @@ void loop() {
   //Если удерживаем нажатой кнопку уменьшения яркости
   if (btnPrev.step()) {
     if (globalBrightness > MIN_BRIGHTNESS){ //Если яркость больше или равна минимальной
-      globalBrightness -= STEP_AUTO_BRIGHTNESS;
+      globalBrightness = max<uint8_t>(MIN_BRIGHTNESS, globalBrightness - STEP_AUTO_BRIGHTNESS);
       Serial.print("Brightness = ");
       Serial.println(globalBrightness);
     }else{
@@ -291,7 +291,8 @@ void loop() {
               val++;
               flag = false;
             }
-            if(val == countLedsPin) {
+            if(val >= countLedsPin) {
+              val = countLedsPin - 1;
               directionBrightness = !directionBrightness;
               counterBrightness = 255;
             }
@@ -337,6 +338,7 @@ void loop() {
             }
           }else{
             if (val >= countLedsPin){
+              val = countLedsPin - 1;
               counterBrightness--;
               analogWrite(ledPin[val], crt3_8(counterBrightness));
               if (counterBrightness == 0) { 
