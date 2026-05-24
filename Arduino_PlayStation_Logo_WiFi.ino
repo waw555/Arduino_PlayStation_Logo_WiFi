@@ -107,6 +107,7 @@ struct Data {
 Data data;  // переменная, с которой мы работаем в программе
 
 EEManager memory(data, 10000); // передаём нашу переменную (фактически её адрес)
+void initModeState(uint8_t mode);
 
 void setup() {
   Serial.begin(9600);
@@ -136,6 +137,7 @@ void setup() {
   currentMode = data.currentMode;
   oldMode = currentMode;
   randomSeed(micros());
+  initModeState(currentMode);
 }
 
 void loop() {
@@ -230,129 +232,7 @@ void loop() {
     //oldMode = currentMode;
     currentMode++;
     if (currentMode > 10) currentMode = 0;
-    switch(currentMode){
-      case 0:
-        setLedsOff();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 1:
-        setLedsOff();
-        timerMode = millis();
-        directionBrightness = true;
-        valueBrightness = 0;
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 2:
-        setLedsOff();
-        counterBrightness = 0;
-        val = 0;
-        mode2Step = 0;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 3:
-        setLedsOff();
-        counterBrightness = 0;
-        val = countLedsPin - 1;
-        mode2Step = 0;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 4:
-        setLedsOff();
-        for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
-        randomLedIndex = random(countLedsPin);
-        randomLedDirectionUp = true;
-        randomModeDelay = 0;
-        randomModeDelayStart = 0;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 5:
-        setLedsOff();
-        for (uint8_t i = 0; i < countLedsPin; i++) {
-          pulseBrightness[i] = random(globalBrightness + 1);
-          pulseDirectionUp[i] = random(2);
-          pulseLedTimer[i] = millis();
-          pulseLedInterval[i] = random(PULSE_INTERVAL_MODE_5_MIN, PULSE_INTERVAL_MODE_5_MAX + 1);
-        }
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 6:
-        setLedsOff();
-        for (uint8_t i = 0; i < countLedsPin; i++) {
-          mode6Brightness[i] = random(globalBrightness + 1);
-          mode6DirectionUp[i] = random(2);
-          mode6Timer[i] = millis();
-          mode6Interval[i] = random(PULSE_INTERVAL_MODE_5_MIN, PULSE_INTERVAL_MODE_5_MAX + 1);
-        }
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 7:
-        setLedsOff();
-        for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
-        randomLedIndex = random(countLedsPin);
-        randomLedBrightness[randomLedIndex] = globalBrightness;
-        randomLedDirectionUp = false;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 8:
-        setLedsOff();
-        for (uint8_t i = 0; i < countLedsPin; i++) {
-          mode8Brightness[i] = 0;
-          mode8DirectionUp[i] = false;
-          mode8Active[i] = false;
-        }
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 9:
-        setLedsOff();
-        counterBrightness = 0;
-        val = 0;
-        mode2Step = 0;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 10:
-        setLedsOff();
-        counterBrightness = 0;
-        val = countLedsPin - 1;
-        mode2Step = 0;
-        timerMode = millis();
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      case 100:
-        setLedsOff();
-        timerMode = millis();
-        k = 0;
-        flag = true;
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-      default:
-        setLedsOff();
-        timerMode = millis();
-        k = 0;
-        flag = true;
-        Serial.print("Mode = ");
-        Serial.println(currentMode);
-      break;
-    }
+    initModeState(currentMode);
     Serial.println("btnMode - click");
     data.currentMode = currentMode;
     memory.update();
@@ -694,6 +574,74 @@ void loop() {
   }else{
     setLedsOff(); //Выключаем все диоды
   }
+}
+
+void initModeState(uint8_t mode) {
+  setLedsOff();
+  timerMode = millis();
+
+  switch(mode) {
+    case 1:
+      directionBrightness = true;
+      valueBrightness = 0;
+      break;
+    case 2:
+    case 9:
+      counterBrightness = 0;
+      val = 0;
+      mode2Step = 0;
+      break;
+    case 3:
+    case 10:
+      counterBrightness = 0;
+      val = countLedsPin - 1;
+      mode2Step = 0;
+      break;
+    case 4:
+      for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
+      randomLedIndex = random(countLedsPin);
+      randomLedDirectionUp = true;
+      randomModeDelay = 0;
+      randomModeDelayStart = 0;
+      break;
+    case 5:
+      for (uint8_t i = 0; i < countLedsPin; i++) {
+        pulseBrightness[i] = random(globalBrightness + 1);
+        pulseDirectionUp[i] = random(2);
+        pulseLedTimer[i] = millis();
+        pulseLedInterval[i] = random(PULSE_INTERVAL_MODE_5_MIN, PULSE_INTERVAL_MODE_5_MAX + 1);
+      }
+      break;
+    case 6:
+      for (uint8_t i = 0; i < countLedsPin; i++) {
+        mode6Brightness[i] = random(globalBrightness + 1);
+        mode6DirectionUp[i] = random(2);
+        mode6Timer[i] = millis();
+        mode6Interval[i] = random(PULSE_INTERVAL_MODE_5_MIN, PULSE_INTERVAL_MODE_5_MAX + 1);
+      }
+      break;
+    case 7:
+      for (uint8_t i = 0; i < countLedsPin; i++) randomLedBrightness[i] = 0;
+      randomLedIndex = random(countLedsPin);
+      randomLedBrightness[randomLedIndex] = globalBrightness;
+      randomLedDirectionUp = false;
+      break;
+    case 8:
+      for (uint8_t i = 0; i < countLedsPin; i++) {
+        mode8Brightness[i] = 0;
+        mode8DirectionUp[i] = false;
+        mode8Active[i] = false;
+      }
+      break;
+    case 100:
+    default:
+      k = 0;
+      flag = true;
+      break;
+  }
+
+  Serial.print("Mode = ");
+  Serial.println(mode);
 }
 
 /* ==========================================Выключить все светодиоды===============================*/
