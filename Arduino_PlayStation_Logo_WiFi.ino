@@ -32,6 +32,8 @@
 #include <EEManager.h>                      //Библитека памяти
 #include <ESP8266WiFi.h>
 #include <GyverPortal.h>
+#include <ESP8266WebServer.h>
+#include <Update.h>
 
 #define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
 #define MIN_BRIGHTNESS 5  //Минимальная яркость 255-0
@@ -52,8 +54,8 @@
 #define POWER_OFF_FADE_INTERVAL 10UL
 #define AUTO_MODE_INTERVAL 60000UL
 
-#define WIFI_SSID "YOUR_WIFI_SSID"
-#define WIFI_PASS "YOUR_WIFI_PASSWORD"
+#define WIFI_SSID ""
+#define WIFI_PASS ""
 #define AP_SSID "PS_LOGO_LAMP"
 #define AP_PASS "12345678"
 
@@ -116,6 +118,9 @@ struct Data {
   bool powerOn = false;
   uint8_t globalBrightness = 100;
   uint8_t currentMode = 0;
+  bool wifiConfigured = false;
+  char wifiSsid[33] = "";
+  char wifiPass[65] = "";
 };
 
 Data data;  // переменная, с которой мы работаем в программе
@@ -127,10 +132,12 @@ void runCurrentMode(uint8_t modeToRun);
 
 
 GyverPortal portal;
+ESP8266WebServer updateServer(8080);
 
 void buildPortal();
 void actionPortal();
 void setupWiFi();
+void setupUpdateServer();
 void changePowerState(bool on);
 void changeBrightness(int delta);
 
@@ -141,7 +148,7 @@ void setup() {
     pinMode(ledPin[i], OUTPUT);
   }
 
-  EEPROM.begin(10);
+  EEPROM.begin(512);
 
   /*
     Запускаем менеджер, передаём:
@@ -169,6 +176,7 @@ void setup() {
   portal.attachBuild(buildPortal);
   portal.attach(actionPortal);
   portal.start();
+  setupUpdateServer();
 }
 
 void loop() {
@@ -183,6 +191,7 @@ void loop() {
   btnPrev.tick();
   btnMode.tick();
   portal.tick();
+  updateServer.handleClient();
 
   //Если нажали кнопку включения, то меняем значение powerOn на противоположное
   if (btnOn.click()) {
@@ -680,12 +689,19 @@ void showMinMaxBrightness(){
 
 void setupWiFi() {
   WiFi.mode(WIFI_AP_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
 
-  uint32_t start = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000UL) {
-    delay(250);
-    Serial.print(".");
+  if (data.wifiConfigured && strlen(data.wifiSsid) > 0) {
+    WiFi.begin(data.wifiSsid, data.wifiPass);
+  } else if (strlen(WIFI_SSID) > 0) {
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+  }
+
+  if (WiFi.SSID().length() > 0) {
+    uint32_t start = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - start < 15000UL) {
+      delay(250);
+      Serial.print(".");
+    }
   }
 
   if (WiFi.status() == WL_CONNECTED) {
@@ -694,12 +710,43 @@ void setupWiFi() {
     Serial.println(WiFi.localIP());
   } else {
     Serial.println();
-    Serial.println("WiFi not connected, AP only mode");
+    Serial.println("WiFi not connected, AP mode enabled for setup");
   }
 
   WiFi.softAP(AP_SSID, AP_PASS);
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
+}
+
+
+void setupUpdateServer() {
+  updateServer.on("/", HTTP_GET, []() {
+    String page = "<html><head><meta charset='utf-8'><title>Firmware update</title></head><body>";
+    page += "<h2>OTA update</h2><form method='POST' action='/update' enctype='multipart/form-data'>";
+    page += "<input type='file' name='firmware'><input type='submit' value='Upload'></form>";
+    page += "</body></html>";
+    updateServer.send(200, "text/html", page);
+  });
+
+  updateServer.on("/update", HTTP_POST, []() {
+    bool ok = !Update.hasError();
+    updateServer.send(200, "text/plain", ok ? "OK. Rebooting..." : "Update failed");
+    delay(200);
+    if (ok) ESP.restart();
+  }, []() {
+    HTTPUpload& upload = updateServer.upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      WiFiUDP::stopAll();
+      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+      Update.begin(maxSketchSpace);
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      Update.write(upload.buf, upload.currentSize);
+    } else if (upload.status == UPLOAD_FILE_END) {
+      Update.end(true);
+    }
+  });
+
+  updateServer.begin();
 }
 
 void buildPortal() {
@@ -718,6 +765,13 @@ void buildPortal() {
   GP.BREAK();
   GP.BUTTON("prev", "- Яркость");
   GP.BUTTON("next", "+ Яркость");
+  GP.BREAK();
+  GP.LABEL("WiFi настройка");
+  GP.TEXT("wifi_ssid", "SSID", data.wifiSsid);
+  GP.PASS("wifi_pass", "Password", data.wifiPass);
+  GP.BUTTON("wifi_save", "Сохранить WiFi");
+  GP.BREAK();
+  GP.LABEL("Обновление прошивки доступно на порту 8080 (например, http://192.168.4.1:8080)");
   GP.BUILD_END();
 }
 
@@ -739,7 +793,26 @@ void actionPortal() {
 
   if (portal.click("prev")) changeBrightness(-STEP_MANUAL_BRIGHTNESS);
   if (portal.click("next")) changeBrightness(STEP_MANUAL_BRIGHTNESS);
+
+  if (portal.click("wifi_save")) {
+    String ssid = portal.getString("wifi_ssid");
+    String pass = portal.getString("wifi_pass");
+
+    ssid.trim();
+    pass.trim();
+
+    if (ssid.length() > 0) {
+      ssid.toCharArray(data.wifiSsid, sizeof(data.wifiSsid));
+      pass.toCharArray(data.wifiPass, sizeof(data.wifiPass));
+      data.wifiConfigured = true;
+      memory.update();
+
+      WiFi.begin(data.wifiSsid, data.wifiPass);
+      Serial.println("Trying to connect with new WiFi credentials...");
+    }
+  }
 }
+
 
 void changePowerState(bool on) {
   if (powerOn == on) return;
