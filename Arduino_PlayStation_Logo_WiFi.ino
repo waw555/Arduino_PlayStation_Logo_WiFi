@@ -46,7 +46,7 @@
 #define PULSE_INTERVAL_MODE_5_MIN 5UL
 #define PULSE_INTERVAL_MODE_5_MAX 20UL
 #define LIGHTNING_FADE_INTERVAL 6UL
-#define LIGHTNING_FADE_STEP_DOWN 2
+#define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1
 #define POWER_OFF_FADE_INTERVAL 10UL
 #define AUTO_MODE_INTERVAL 60000UL
 
@@ -455,8 +455,8 @@ void runCurrentMode(uint8_t modeToRun) {
       case 7:
         if (millis() - timerMode >= LIGHTNING_FADE_INTERVAL) {
           timerMode = millis();
-          if (randomLedBrightness[randomLedIndex] > LIGHTNING_FADE_STEP_DOWN) {
-            randomLedBrightness[randomLedIndex] -= LIGHTNING_FADE_STEP_DOWN;
+          if (randomLedBrightness[randomLedIndex] > LIGHTNING_FADE_STEP_DOWN_MODE_7_8) {
+            randomLedBrightness[randomLedIndex] -= LIGHTNING_FADE_STEP_DOWN_MODE_7_8;
           } else {
             randomLedBrightness[randomLedIndex] = 0;
             randomLedIndex = random(countLedsPin);
@@ -486,8 +486,8 @@ void runCurrentMode(uint8_t modeToRun) {
 
           for (uint8_t i = 0; i < countLedsPin; i++) {
             if (mode8Active[i]) {
-              if (mode8Brightness[i] > LIGHTNING_FADE_STEP_DOWN) {
-                mode8Brightness[i] -= LIGHTNING_FADE_STEP_DOWN;
+              if (mode8Brightness[i] > LIGHTNING_FADE_STEP_DOWN_MODE_7_8) {
+                mode8Brightness[i] -= LIGHTNING_FADE_STEP_DOWN_MODE_7_8;
               } else {
                 mode8Brightness[i] = 0;
                 mode8Active[i] = false;
