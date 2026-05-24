@@ -47,6 +47,8 @@
 #define PULSE_INTERVAL_MODE_5_MAX 20UL
 #define LIGHTNING_FADE_INTERVAL 6UL
 #define LIGHTNING_FADE_STEP_DOWN 2
+#define POWER_OFF_FADE_INTERVAL 10UL
+#define AUTO_MODE_INTERVAL 60000UL
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
@@ -95,6 +97,11 @@ uint16_t mode6Interval[4] = {0, 0, 0, 0};
 uint8_t mode8Brightness[4] = {0, 0, 0, 0};
 bool mode8DirectionUp[4] = {true, true, true, true};
 bool mode8Active[4] = {false, false, false, false};
+uint8_t autoModeCurrent = 0;
+uint32_t autoModeTimer = 0;
+uint8_t powerTransitionState = 0; // 0 - нет перехода, 1 - мерцание при включении, 2 - затухание при выключении
+uint8_t startupFlickerStep = 0;
+uint8_t shutdownFadeBrightness = 0;
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 
@@ -108,6 +115,8 @@ Data data;  // переменная, с которой мы работаем в 
 
 EEManager memory(data, 10000); // передаём нашу переменную (фактически её адрес)
 void initModeState(uint8_t mode);
+bool handlePowerTransition();
+void runCurrentMode(uint8_t modeToRun);
 
 void setup() {
   Serial.begin(9600);
@@ -154,6 +163,15 @@ void loop() {
 
   //Если нажали кнопку включения, то меняем значение powerOn на противоположное
   if (btnOn.click()) {
+    if (!powerOn) {
+      startupFlickerStep = 0;
+      powerTransitionState = 1;
+      timerMode = millis();
+    } else {
+      shutdownFadeBrightness = globalBrightness;
+      powerTransitionState = 2;
+      timerMode = millis();
+    }
     powerOn = !powerOn;
     Serial.println("btnOn - click");
     data.powerOn = powerOn;
@@ -231,15 +249,30 @@ void loop() {
   {
     //oldMode = currentMode;
     currentMode++;
-    if (currentMode > 10) currentMode = 0;
+    if (currentMode > 11) currentMode = 0;
     initModeState(currentMode);
     Serial.println("btnMode - click");
     data.currentMode = currentMode;
     memory.update();
   }
 /********************************************Основной цикл работы программы**********************************************/
+  if (powerTransitionState != 0 && handlePowerTransition()) return;
+
   if (powerOn){
-    switch(currentMode){
+    if (currentMode == 11 && millis() - autoModeTimer >= AUTO_MODE_INTERVAL) {
+      autoModeCurrent = random(0, 11);
+      initModeState(autoModeCurrent);
+      autoModeTimer = millis();
+    }
+    uint8_t modeToRun = (currentMode == 11) ? autoModeCurrent : currentMode;
+    runCurrentMode(modeToRun);
+  }else{
+    setLedsOff(); //Выключаем все диоды
+  }
+}
+
+void runCurrentMode(uint8_t modeToRun) {
+  switch(modeToRun){
       case 0:
         setLedsBrightness(globalBrightness, globalBrightness, globalBrightness, globalBrightness);
           break;
@@ -571,9 +604,6 @@ void loop() {
       default:
           break;
     }
-  }else{
-    setLedsOff(); //Выключаем все диоды
-  }
 }
 
 void initModeState(uint8_t mode) {
@@ -634,6 +664,11 @@ void initModeState(uint8_t mode) {
       }
       break;
     case 100:
+    case 11:
+      autoModeCurrent = random(0, 11);
+      autoModeTimer = millis();
+      initModeState(autoModeCurrent);
+      break;
     default:
       k = 0;
       flag = true;
@@ -686,4 +721,36 @@ void shuffleLedOrder() {
 // кубическая гамма для 8 бит
 uint8_t crt3_8(uint8_t val) {
   return ((uint32_t)(val + 1) * (val + 1) * val) >> 16;
+}
+
+bool handlePowerTransition() {
+  if (powerTransitionState == 1) {
+    if (millis() - timerMode >= 70) {
+      timerMode = millis();
+      static const uint8_t flickerPattern[] = {0, 220, 30, 255, 0, 180, 70, 255};
+      uint8_t level = min<uint8_t>(globalBrightness, flickerPattern[startupFlickerStep]);
+      setLedsBrightness(crt3_8(level), crt3_8(level), crt3_8(level), crt3_8(level));
+      startupFlickerStep++;
+      if (startupFlickerStep >= sizeof(flickerPattern)) {
+        powerTransitionState = 0;
+      }
+    }
+    return true;
+  }
+
+  if (powerTransitionState == 2) {
+    if (millis() - timerMode >= POWER_OFF_FADE_INTERVAL) {
+      timerMode = millis();
+      if (shutdownFadeBrightness > 0) shutdownFadeBrightness--;
+      uint8_t out = crt3_8(shutdownFadeBrightness);
+      setLedsBrightness(out, out, out, out);
+      if (shutdownFadeBrightness == 0) {
+        powerTransitionState = 0;
+        setLedsOff();
+      }
+    }
+    return true;
+  }
+
+  return false;
 }
