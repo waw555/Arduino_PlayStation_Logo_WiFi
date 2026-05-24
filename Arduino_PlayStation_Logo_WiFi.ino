@@ -33,7 +33,11 @@
 #include <ESP8266WiFi.h>
 #include <GyverPortal.h>
 #include <ESP8266WebServer.h>
+#if defined(ESP8266)
+#include <Updater.h>
+#else
 #include <Update.h>
+#endif
 
 #define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
 #define MIN_BRIGHTNESS 5  //Минимальная яркость 255-0
