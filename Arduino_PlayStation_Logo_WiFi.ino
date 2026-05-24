@@ -30,6 +30,8 @@
 
 #include <EncButton.h>                      //Библиотека для кнопки
 #include <EEManager.h>                      //Библитека памяти
+#include <ESP8266WiFi.h>
+#include <GyverPortal.h>
 
 #define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
 #define MIN_BRIGHTNESS 5  //Минимальная яркость 255-0
@@ -49,6 +51,11 @@
 #define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1
 #define POWER_OFF_FADE_INTERVAL 10UL
 #define AUTO_MODE_INTERVAL 60000UL
+
+#define WIFI_SSID "YOUR_WIFI_SSID"
+#define WIFI_PASS "YOUR_WIFI_PASSWORD"
+#define AP_SSID "PS_LOGO_LAMP"
+#define AP_PASS "12345678"
 
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
@@ -118,6 +125,16 @@ void initModeState(uint8_t mode);
 bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 
+
+GyverPortal portal;
+
+void buildPortal();
+void actionPortal();
+void setupWiFi();
+void changePowerState(bool on);
+void changeBrightness(int delta);
+
+
 void setup() {
   Serial.begin(9600);
   for(int i = 0; i < countLedsPin; i++){
@@ -147,6 +164,11 @@ void setup() {
   oldMode = currentMode;
   randomSeed(micros());
   initModeState(currentMode);
+
+  setupWiFi();
+  portal.attachBuild(buildPortal);
+  portal.attach(actionPortal);
+  portal.start();
 }
 
 void loop() {
@@ -160,88 +182,36 @@ void loop() {
   btnNext.tick();
   btnPrev.tick();
   btnMode.tick();
+  portal.tick();
 
   //Если нажали кнопку включения, то меняем значение powerOn на противоположное
   if (btnOn.click()) {
-    if (!powerOn) {
-      startupFlickerStep = 0;
-      powerTransitionState = 1;
-      timerMode = millis();
-    } else {
-      shutdownFadeBrightness = globalBrightness;
-      powerTransitionState = 2;
-      timerMode = millis();
-    }
-    powerOn = !powerOn;
+    changePowerState(!powerOn);
     Serial.println("btnOn - click");
-    data.powerOn = powerOn;
-    memory.update();
   }
 
   //Если нажали кнопку увеличения яркости, то прибавляем яркость на количество STEP_BRIGHTNESS
   if (btnNext.click()) {
-    if(globalBrightness >= MAX_BRIGHTNESS){ //Если яркость уже больше или равна максимальной
-      globalBrightness = MAX_BRIGHTNESS;
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-      showMinMaxBrightness();
-    }else{ //Если яркость меньше максимальной
-      globalBrightness = min<uint8_t>(MAX_BRIGHTNESS, globalBrightness + STEP_MANUAL_BRIGHTNESS);
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-    }
+    changeBrightness(STEP_MANUAL_BRIGHTNESS);
     Serial.println("btnNext - click");
-    data.globalBrightness = globalBrightness;
-    memory.update();
   }
 
   //Если удерживаем нажатой кнопку увеличения яркости
   if (btnNext.step()) {
-    if (globalBrightness < MAX_BRIGHTNESS){ //Если яркость меньше или равна максимальной
-      globalBrightness = min<uint8_t>(MAX_BRIGHTNESS, globalBrightness + STEP_AUTO_BRIGHTNESS);
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-    }else{
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-      showMinMaxBrightness();
-    }
+    changeBrightness(STEP_AUTO_BRIGHTNESS);
     Serial.println("btnNext - step");
-    data.globalBrightness = globalBrightness;
-    memory.update();
   }
 
   //Если нажали кнопку уменьшения яркости, то убавляем яркость на количество STEP_BRIGHTNESS
   if (btnPrev.click()) {
-    if(globalBrightness <= MIN_BRIGHTNESS){ // Если яркость уже меньше или равна минимальной
-      globalBrightness = MIN_BRIGHTNESS;
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-      showMinMaxBrightness();
-    }else{ //Если яркость больше минимальной
-      globalBrightness = max<uint8_t>(MIN_BRIGHTNESS, globalBrightness - STEP_MANUAL_BRIGHTNESS);
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-    } 
+    changeBrightness(-STEP_MANUAL_BRIGHTNESS);
     Serial.println("btnPrev - click");
-    data.globalBrightness = globalBrightness;
-    memory.update();
   }
 
   //Если удерживаем нажатой кнопку уменьшения яркости
   if (btnPrev.step()) {
-    if (globalBrightness > MIN_BRIGHTNESS){ //Если яркость больше или равна минимальной
-      globalBrightness = max<uint8_t>(MIN_BRIGHTNESS, globalBrightness - STEP_AUTO_BRIGHTNESS);
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-    }else{
-      Serial.print("Brightness = ");
-      Serial.println(globalBrightness);
-      showMinMaxBrightness();
-    }
+    changeBrightness(-STEP_AUTO_BRIGHTNESS);
     Serial.println("btnPrev - step");
-    data.globalBrightness = globalBrightness;
-    memory.update();
   }
 
 /*******************************************Кнопка переключения режимов****************************************************/
@@ -705,6 +675,104 @@ void showMinMaxBrightness(){
   }else{
     currentMode = oldMode;
   }
+}
+
+
+void setupWiFi() {
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  uint32_t start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 15000UL) {
+    delay(250);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println();
+    Serial.print("WiFi connected, IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println();
+    Serial.println("WiFi not connected, AP only mode");
+  }
+
+  WiFi.softAP(AP_SSID, AP_PASS);
+  Serial.print("AP IP: ");
+  Serial.println(WiFi.softAPIP());
+}
+
+void buildPortal() {
+  GP.BUILD_BEGIN();
+  GP.THEME(GP_DARK);
+  GP.TITLE("PlayStation Logo Lamp");
+  GP.LABEL("Управление устройством");
+  GP.BREAK();
+  GP.SWITCH("power", powerOn, "Питание");
+  GP.BREAK();
+  GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS, 1, "Яркость");
+  GP.BREAK();
+  GP.SELECT("mode", String(currentMode), "0,1,2,3,4,5,6,7,8,9,10,11", "Режим");
+  GP.BREAK();
+  GP.BUTTON("prev", "- Яркость");
+  GP.BUTTON("next", "+ Яркость");
+  GP.BUILD_END();
+}
+
+void actionPortal() {
+  if (portal.update("power")) changePowerState((bool)portal.getCheck("power"));
+
+  if (portal.update("brightness")) {
+    globalBrightness = portal.getInt("brightness");
+    data.globalBrightness = globalBrightness;
+    memory.update();
+  }
+
+  if (portal.update("mode")) {
+    currentMode = portal.getInt("mode");
+    initModeState(currentMode);
+    data.currentMode = currentMode;
+    memory.update();
+  }
+
+  if (portal.click("prev")) changeBrightness(-STEP_MANUAL_BRIGHTNESS);
+  if (portal.click("next")) changeBrightness(STEP_MANUAL_BRIGHTNESS);
+}
+
+void changePowerState(bool on) {
+  if (powerOn == on) return;
+
+  if (on) {
+    startupFlickerStep = 0;
+    powerTransitionState = 1;
+    timerMode = millis();
+  } else {
+    shutdownFadeBrightness = globalBrightness;
+    powerTransitionState = 2;
+    timerMode = millis();
+  }
+
+  powerOn = on;
+  data.powerOn = powerOn;
+  memory.update();
+}
+
+void changeBrightness(int delta) {
+  int target = (int)globalBrightness + delta;
+  if (target > MAX_BRIGHTNESS) {
+    globalBrightness = MAX_BRIGHTNESS;
+    showMinMaxBrightness();
+  } else if (target < MIN_BRIGHTNESS) {
+    globalBrightness = MIN_BRIGHTNESS;
+    showMinMaxBrightness();
+  } else {
+    globalBrightness = target;
+  }
+
+  Serial.print("Brightness = ");
+  Serial.println(globalBrightness);
+  data.globalBrightness = globalBrightness;
+  memory.update();
 }
 
 
