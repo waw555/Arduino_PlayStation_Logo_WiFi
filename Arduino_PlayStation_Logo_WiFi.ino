@@ -710,9 +710,11 @@ void buildPortal() {
   GP.BREAK();
   GP.SWITCH("power", powerOn, "Питание");
   GP.BREAK();
-  GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS, 1, "Яркость");
+  GP.LABEL("Яркость");
+  GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS, 1);
   GP.BREAK();
-  GP.SELECT("mode", String(currentMode), "0,1,2,3,4,5,6,7,8,9,10,11", "Режим");
+  GP.LABEL("Режим");
+  GP.SELECT("mode", "0,1,2,3,4,5,6,7,8,9,10,11", currentMode);
   GP.BREAK();
   GP.BUTTON("prev", "- Яркость");
   GP.BUTTON("next", "+ Яркость");
