@@ -380,8 +380,8 @@ void loop() {
           break;
       case 2:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
-          timerMode = millis();
-          if (mode2Step == 0) {  // Плавно включаем фигуры: Треугольник -> Круг -> Крест -> Квадрат
+          if (mode2Step == 0) {
+            timerMode = millis();  // Плавно включаем фигуры: Треугольник -> Круг -> Крест -> Квадрат
             counterBrightness++;
             analogWrite(ledPin[val], crt3_8(counterBrightness));
             if (counterBrightness == 255) {
@@ -394,6 +394,7 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Квадрат -> Крест -> Круг -> Треугольник
+            timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
               analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
@@ -421,8 +422,8 @@ void loop() {
           break;
       case 3:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
-          timerMode = millis();
-          if (mode2Step == 0) {  // Плавно включаем фигуры: Квадрат -> Крест -> Круг -> Треугольник
+          if (mode2Step == 0) {
+            timerMode = millis();  // Плавно включаем фигуры: Квадрат -> Крест -> Круг -> Треугольник
             counterBrightness++;
             analogWrite(ledPin[val], crt3_8(counterBrightness));
             if (counterBrightness == 255) {
@@ -436,6 +437,7 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {  // Плавно выключаем в обратном порядке: Треугольник -> Круг -> Крест -> Квадрат
+            timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
               analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
@@ -584,8 +586,8 @@ void loop() {
           break;
       case 9:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
-          timerMode = millis();
           if (mode2Step == 0) {
+            timerMode = millis();
             counterBrightness++;
             analogWrite(ledPin[val], crt3_8(counterBrightness));
             if (counterBrightness == 255) {
@@ -598,6 +600,7 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {
+            timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
               analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
@@ -624,8 +627,8 @@ void loop() {
           break;
       case 10:
         if (millis() - timerMode >= FADE_TIME_MODE_2){
-          timerMode = millis();
           if (mode2Step == 0) {
+            timerMode = millis();
             counterBrightness++;
             analogWrite(ledPin[val], crt3_8(counterBrightness));
             if (counterBrightness == 255) {
@@ -639,6 +642,7 @@ void loop() {
               }
             }
           } else if (mode2Step == 2) {
+            timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
               analogWrite(ledPin[val], crt3_8(255 - counterBrightness));
