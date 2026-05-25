@@ -237,7 +237,7 @@ void startAPAndFormForConnectToWIFI() {
 
   // запускаем точку доступа
   WiFi.mode(WIFI_AP);
-  WiFi.softAP("WiFi Hood");
+  WiFi.softAP("PS_LOGO_AP");
 
   // запускаем портал с формой ввода
   ui.attachBuild(build);
