@@ -151,7 +151,7 @@ bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 
 
-GyverPortal ui(&LittleFS);
+GyverPortal portal(&LittleFS);
 ESP8266WebServer updateServer(8080);
 
 void buildPortal();
@@ -176,7 +176,7 @@ struct SettingsData {
   bool operatingMode = false; //Режим измерения
 };
 
-SettingsData data;
+SettingsData settingsData;
 
 
 void setup() {
