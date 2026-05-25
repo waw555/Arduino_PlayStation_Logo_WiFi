@@ -3,14 +3,14 @@ void build() {
   GP.BUILD_BEGIN(GP_DARK);
 
   //Название страницы в браузере  
-  GP.PAGE_TITLE("WiFi Вытяжка");
+  GP.PAGE_TITLE("PLAYSTATION LOGO");
 
   // список имён компонентов на обновление
   GP.UPDATE("tempValue,humiValue,fan,switchFan,ModeOperating,ModeManual"); 
     //Проверка связи с ESP
   GP.ONLINE_CHECK(5000);
   //Перезагрузка страницы
-  GP.RELOAD_CLICK("useMQTT,useLocAdd"); 
+  GP.RELOAD_CLICK("useLocAdd"); 
     
   if (enableAP){ //Если точка доступа включена
           // Форма ввода SSID и пароля в режиме точки доступа
@@ -29,20 +29,6 @@ void build() {
                       M_BOX(GP.SPAN("http://", GP_RIGHT); GP.TEXT("la", "Адресс", data.localAddress, "", 20);GP.SPAN(".local",GP_LEFT); );             
                     }
                     GP.BREAK();
-                    GP.HR(GP_GRAY);
-                    GP.BREAK();
-                    M_BOX(GP.LABEL("Иcпользовать MQTT"); GP.CHECK("useMQTT", data.mqttEnable););
-                    GP.BREAK();
-                    if (mqttEnable){
-                      M_BOX(GP.SPAN("Сервер MQTT",GP_LEFT); GP.TEXT("mqtts", "Сервер MQTT", data.mqttserver, "", 40); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Порт MQTT",GP_LEFT); GP.TEXT("mqttp", "Порт MQTT", data.mqttport, "", 6); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Логин MQTT",GP_LEFT); GP.TEXT("mqttlog", "Логин MQTT", data.mqttlogin, "", 20); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Пароль MQTT",GP_LEFT); GP.TEXT("mqttpass", "Пароль MQTT", data.mqttpassword, "", 20); );
-                      GP.BREAK();
-                    }
               );       
             );
             GP.SUBMIT("Сохранить");
@@ -172,20 +158,6 @@ void build() {
                       M_BOX(GP.SPAN("http://"); GP.TEXT("la", "Адресс", data.localAddress, "", 20);GP.SPAN(".local"); );             
                     };
                     GP.BREAK();
-                    GP.HR(GP_GRAY);
-                    GP.BREAK();
-                    M_BOX(GP.LABEL("Иcпользовать MQTT"); GP.CHECK("useMQTT", data.mqttEnable););
-                    GP.BREAK();
-                    if (mqttEnable){
-                      M_BOX(GP.SPAN("Сервер MQTT",GP_LEFT); GP.TEXT("mqtts", "Сервер MQTT", data.mqttserver, "", 40); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Порт MQTT",GP_LEFT); GP.TEXT("mqttp", "Порт MQTT", data.mqttport, "", 6); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Логин MQTT",GP_LEFT); GP.TEXT("mqttlog", "Логин MQTT", data.mqttlogin, "", 20); );
-                      GP.BREAK();
-                      M_BOX(GP.SPAN("Пароль MQTT",GP_LEFT); GP.TEXT("mqttpass", "Пароль MQTT", data.mqttpassword, "", 20); );
-                      GP.BREAK();
-                    };
               );       
             );
             GP.SUBMIT("Сохранить");      

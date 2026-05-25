@@ -33,14 +33,6 @@
 #include <LittleFS.h>                       //Файловая система
 #include <PubSubClient.h>
 #include <EncButton.h>                      //Библиотека для кнопки
-#include <EEManager.h>                      //Библитека памяти
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
-#if defined(ESP8266)
-#include <Updater.h>
-#else
-#include <Update.h>
-#endif
 
 //ОТЛАДКА
 #define DEBUG_ENABLE //Расскоментируй для включения отладки в порт
@@ -52,47 +44,46 @@
 #define DEBUG(x)
 #endif
 
-#define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
-#define MIN_BRIGHTNESS 5  //Минимальная яркость 255-0
-#define MIN_BRIGHTNESS_FADE_MODE 0  //Минимальная яркость в режиме плавного затухания 255-0
-#define STEP_AUTO_BRIGHTNESS 5  //Шаг регулировки яркости по удержанию кнопки
-#define STEP_MANUAL_BRIGHTNESS 10  //Шаг регулировки яркости по 1 нажатию
-#define FADE_TIME_MODE_1 20 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
-#define FADE_TIME_MODE_2 5 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
-#define HOLD_ON_TIME_MODE_2 5000UL // Пауза после полного включения фигур (5 секунд)
-#define HOLD_OFF_TIME_MODE_2 5000UL // Пауза после полного выключения фигур (5 секунд)
-#define RANDOM_FADE_INTERVAL_MODE_4 8UL
-#define RANDOM_DELAY_MIN_MODE_4 150UL
-#define RANDOM_DELAY_MAX_MODE_4 1200UL
-#define PULSE_INTERVAL_MODE_5_MIN 5UL
-#define PULSE_INTERVAL_MODE_5_MAX 20UL
-#define LIGHTNING_FADE_INTERVAL 12UL
-#define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1
-#define POWER_OFF_FADE_INTERVAL 10UL
-#define AUTO_MODE_INTERVAL 60000UL
+#define INIT_ADDR 500  // номер резервной ячейки для инициализации и первой проверки памяти
+#define INIT_KEY 51     // При любых изменениях в структурированных данных измените ключ  или стирайте память при прошивке.
 
-#define WIFI_SSID ""
-#define WIFI_PASS ""
-#define AP_SSID "PS_LOGO_LAMP"
-#define AP_PASS "12345678"
-
+//ВЫХОДЫ НА ПОДСВЕТКУ
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
 #define LED_PIN_CIRCLE 14       //  Пин - Круг
 #define LED_PIN_X 15            //  Пин - Икс
 #define LED_PIN_SQUARE 4        //  Пин - Квадрат
+//КНОПКИ
 #define BUTTON_PIN_ON 0         //  Пин - Кнопка Вкл/Выкл
 #define BUTTON_PIN_PREV 2       //  Пин - Кнопка Назад
 #define BUTTON_PIN_NEXT 13      //  Пин - Кнопка Вперед
 #define BUTTON_PIN_MODE 5       //  Пин - Кнопка Режим
 
-#define INIT_ADDR 500  // номер резервной ячейки для инициализации и первой проверки памяти
-#define INIT_KEY 51     // При любых изменениях в структурированных данных измените ключ  или стирайте память при прошивке.
+//ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+#define MAX_BRIGHTNESS 255                  //Максимальная яркость 0-255
+#define MIN_BRIGHTNESS 5                    //Минимальная яркость 255-0
+#define MIN_BRIGHTNESS_FADE_MODE 0          //Минимальная яркость в режиме плавного затухания 255-0
+#define STEP_AUTO_BRIGHTNESS 5              //Шаг регулировки яркости по удержанию кнопки
+#define STEP_MANUAL_BRIGHTNESS 10           //Шаг регулировки яркости по 1 нажатию
+#define FADE_TIME_MODE_1 20                 // Время увеличения и уменьшения яркости в мс (Default 20 мс)
+#define FADE_TIME_MODE_2 5                  // Время увеличения и уменьшения яркости в мс (Default 20 мс)
+#define HOLD_ON_TIME_MODE_2 5000UL          // Пауза после полного включения фигур (5 секунд)
+#define HOLD_OFF_TIME_MODE_2 5000UL         // Пауза после полного выключения фигур (5 секунд)
+#define RANDOM_FADE_INTERVAL_MODE_4 8UL     // 
+#define RANDOM_DELAY_MIN_MODE_4 150UL       //
+#define RANDOM_DELAY_MAX_MODE_4 1200UL      //
+#define PULSE_INTERVAL_MODE_5_MIN 5UL       //  
+#define PULSE_INTERVAL_MODE_5_MAX 20UL      //
+#define LIGHTNING_FADE_INTERVAL 12UL        //
+#define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1 //
+#define POWER_OFF_FADE_INTERVAL 10UL        //
+#define AUTO_MODE_INTERVAL 60000UL          //Время изменения режимов в автоматическом режиме
 
-Button btnOn(BUTTON_PIN_ON, INPUT_PULLUP); // Вкл/Выкл - btnOn
-Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP); // Назад - btnPrev
-Button btnNext(BUTTON_PIN_NEXT, INPUT_PULLUP); // Веперд - btnNext
+Button btnOn(BUTTON_PIN_ON, INPUT_PULLUP);      // Вкл/Выкл - btnOn
+Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP);  // Назад - btnPrev
+Button btnNext(BUTTON_PIN_NEXT, INPUT_PULLUP);  // Веперд - btnNext
 Button btnMode(BUTTON_PIN_MODE, INPUT_PULLUP);  // Режим btnMode
 
+/**************************ПЕРЕМЕННЫЕ*************************************/
 const uint8_t ledPin[] = {LED_PIN_TRIANGLE, LED_PIN_CIRCLE, LED_PIN_X, LED_PIN_SQUARE};
 const uint8_t countLedsPin = sizeof(ledPin) / sizeof(ledPin[0]);
 
@@ -100,6 +91,11 @@ bool powerOn = false;
 bool dir = true;
 bool directionBrightness = true;
 bool flag = true;
+bool mode8DirectionUp[4] = {true, true, true, true};
+bool mode8Active[4] = {false, false, false, false};
+bool mode6DirectionUp[4] = {true, true, true, true};
+bool pulseDirectionUp[4] = {true, true, true, true};
+bool randomLedDirectionUp = true;
 
 uint8_t globalBrightness = 100;
 uint8_t valueBrightness = 0;
@@ -110,125 +106,168 @@ uint8_t val = 0;
 uint8_t k = 0;
 uint8_t mode2Step = 0;
 uint8_t randomLedIndex = 0;
-bool randomLedDirectionUp = true;
 uint8_t randomLedBrightness[4] = {0, 0, 0, 0};
 uint8_t pulseBrightness[4] = {0, 0, 0, 0};
 uint8_t shuffledLedOrder[4] = {0, 1, 2, 3};
 uint8_t shuffledLedOrderIndex = 0;
-bool pulseDirectionUp[4] = {true, true, true, true};
-uint32_t pulseLedTimer[4] = {0, 0, 0, 0};
-uint16_t pulseLedInterval[4] = {0, 0, 0, 0};
 uint8_t mode6Brightness[4] = {0, 0, 0, 0};
-bool mode6DirectionUp[4] = {true, true, true, true};
-uint32_t mode6Timer[4] = {0, 0, 0, 0};
-uint16_t mode6Interval[4] = {0, 0, 0, 0};
-
 uint8_t mode8Brightness[4] = {0, 0, 0, 0};
-bool mode8DirectionUp[4] = {true, true, true, true};
-bool mode8Active[4] = {false, false, false, false};
 uint8_t autoModeCurrent = 0;
-uint32_t autoModeTimer = 0;
 uint8_t powerTransitionState = 0; // 0 - нет перехода, 1 - мерцание при включении, 2 - затухание при выключении
 uint8_t startupFlickerStep = 0;
 uint8_t shutdownFadeBrightness = 0;
+uint16_t pulseLedInterval[4] = {0, 0, 0, 0};
+uint16_t mode6Interval[4] = {0, 0, 0, 0};
+uint32_t mode6Timer[4] = {0, 0, 0, 0};
+uint32_t pulseLedTimer[4] = {0, 0, 0, 0};
+uint32_t autoModeTimer = 0;
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 
-struct Data {
-  bool powerOn = false;
-  uint8_t globalBrightness = 100;
-  uint8_t currentMode = 0;
-  bool wifiConfigured = false;
-  char wifiSsid[33] = "";
-  char wifiPass[65] = "";
+/**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
+struct SettingsData {
+  bool powerOn = false;               //Состояние при включении/выключении
+  uint8_t globalBrightness = 100;     //Глобальная яркость
+  uint8_t currentMode = 0;            //Текущий режим
+  char ssid[20] = "SSID";             //SSID
+  char pass[20] = "PASSWORD";         //Пароль
+  bool useLocalAddress = false;       //Использовать локальный адрес или нет
+  char localAddress[20] = "pslogo";     //Локальный адрес http://pslogo.local
 };
 
-Data data;  // переменная, с которой мы работаем в программе
+SettingsData data;  // переменная, с которой мы работаем в программе
 
-EEManager memory(data, 10000); // передаём нашу переменную (фактически её адрес)
 void initModeState(uint8_t mode);
 bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 
+uint32_t time_connect = 0; // временная переменная для расчета времени до запуска точки доступа
+uint32_t time_manual_mode = 0; //Переменная времени для ручного режима запуска
+bool enableAP = false; // проверка запущена ли точка доступа
+bool useLocalAddress = false;
 
-GyverPortal ui(&LittleFS);
-ESP8266WebServer updateServer(8080);
-
-void buildPortal();
-void actionPortal();
-void setupWiFi();
-void setupUpdateServer();
 void changePowerState(bool on);
 void changeBrightness(int delta);
 
-/**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
-struct SettingsData {
-  bool powerOnOff = false; // Ячейка 0 - Включение выключение устройства
-  char ssid[20] = "SSID"; //SSID
-  char pass[20] = "PASSWORD";  //Пароль
-  bool useLocalAddress = false;
-  char localAddress[20] = "hood";
-  bool mqttEnable = false;  //Использовать MQTT или нет
-  char mqttserver[40] = "test.mqtt.ru"; // имя сервера MQTT
-  char mqttport[10] = "8080"; //Порт MQTT
-  char mqttlogin[20] = "LOGIN"; //Логин MQTT
-  char mqttpassword[20] = "PASSWORD"; //Пароль MQTT
-  bool operatingMode = false; //Режим измерения
-};
-
-SettingsData data;
-
+GyverPortal ui(&LittleFS);
 
 void setup() {
-  Serial.begin(9600);
+  #ifdef DEBUG_ENABLE
+    Serial.begin(9600);
+  #endif
+  
+  DEBUGLN("Start System");
   for(int i = 0; i < countLedsPin; i++){
     pinMode(ledPin[i], OUTPUT);
   }
 
+  // Инициализация памяти
   EEPROM.begin(512);
-
-  /*
-    Запускаем менеджер, передаём:
-    - Стартовый адрес в памяти для записи даты
-    - Ключ хранения (0.. 255) или символ
-  */
-  byte stat = memory.begin(0, 'b');
-
-  /*
-    Коды возврата:
-    0 - ключ совпал, данные прочитаны из епром
-    1 - ключ не совпал (первый запуск), данные записаны в епром
-    2 - ошибка, в епроме не хватает места
-  */
-  Serial.println(stat);
-
-  powerOn = data.powerOn;
-  globalBrightness = data.globalBrightness;
+  if (EEPROM.read(INIT_ADDR) != INIT_KEY) { // Проверяем на первый запуск и отсутстувие по адресу INIT_ADDR ключа INIT_KEY
+    EEPROM.write(INIT_ADDR, INIT_KEY);    // Записываем ключ INIT_KEY по адресу INIT_ADDR
+    EEPROM.put(0, data);  //Записываем данные по умолчанию в память
+    if (EEPROM.commit()) { //Записываем в память
+      DEBUGLN("EEPROM successfully committed");
+    } else {
+      DEBUGLN("ERROR! EEPROM commit failed");
+    }
+    DEBUGLN("Set Default Data In Memory");
+  }
+  delay(50);
+  EEPROM.get(0, data); // Читаем данные из памяти
+  delay(100);
+  powerOn = data.powerOn; 
+  globalBrightness = data.globalBrightness; 
   currentMode = data.currentMode;
+  useLocalAddress = data.useLocalAddress;
+
   oldMode = currentMode;
   randomSeed(micros());
   initModeState(currentMode);
 
-  setupWiFi();
-  portal.attachBuild(buildPortal);
-  portal.attach(actionPortal);
-  portal.start();
-  setupUpdateServer();
+ // пытаемся подключиться
+  DEBUG("Connect to: ");
+  DEBUGLN(data.ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(data.ssid, data.pass);
+  time_connect = millis();  //записываем текущее время
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    DEBUG(".");
+    
+    if(millis() - time_connect >= 10000 && !enableAP){ // Если время вышло и точка доступа не запущена, то запускаем точку доступа с формой ввода SSID и пароля 
+      enableAP = true;
+      startAPAndFormForConnectToWIFI();
+    }
+  }
+  DEBUGLN();
+  DEBUG("Connected! Local IP: ");
+
+  DEBUGLN(WiFi.localIP());
+
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+
+  if (!LittleFS.begin()) {
+    DEBUGLN("FS Error");
+  }
+
+  //Если подключились к точке доступа, то запускаем портал.
+  ui.attachBuild(build);
+  ui.attach(action);
+  if(useLocalAddress){
+    ui.start(data.localAddress);
+    DEBUGLN();
+    DEBUG("Portal Start: ");
+    DEBUG(data.localAddress);
+    DEBUGLN();    
+  }else{
+    ui.start();
+    DEBUGLN();
+    DEBUG("Portal Start");
+    DEBUGLN(); 
+  } 
+  ui.enableOTA();   // OTA обновление прошивки без пароля
+  //ui.enableOTA("admin", "pass");  // с паролем
+  ui.downloadAuto(true);
+}
+/*******************Запускаем портал с формой для подключения к WiFi************************************/
+void startAPAndFormForConnectToWIFI() {
+  DEBUGLN("Start AP and Portal");
+
+  // запускаем точку доступа
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP("WiFi Hood");
+
+  // запускаем портал с формой ввода
+  ui.attachBuild(build);
+  ui.attach(action);
+  if(useLocalAddress){
+    ui.start(data.localAddress);
+    DEBUGLN();
+    DEBUG("Portal Start: ");
+    DEBUG(data.localAddress);
+    DEBUGLN();    
+  }else{
+    ui.start();
+    DEBUGLN();
+    DEBUG("Portal Start");
+    DEBUGLN(); 
+  } 
+
+  // работа портала
+  while (ui.tick());
 }
 
 void loop() {
-  // в лупе вызываем tick(), в нём по таймеру произойдёт обновление
-  // функция вернёт true, когда это случится
-  if (memory.tick()) Serial.println("Updated!");
-  // запоминаем время
-  currentMillis = millis();   // текущее время в миллисекундах
-
+  ui.tick(); //Вызываем портал
   btnOn.tick();
   btnNext.tick();
   btnPrev.tick();
   btnMode.tick();
-  portal.tick();
-  updateServer.handleClient();
+
+  // запоминаем время
+  currentMillis = millis();   // текущее время в миллисекундах
 
   //Если нажали кнопку включения, то меняем значение powerOn на противоположное
   if (btnOn.click()) {
@@ -269,7 +308,13 @@ void loop() {
     initModeState(currentMode);
     Serial.println("btnMode - click");
     data.currentMode = currentMode;
-    memory.update();
+    DEBUGLN("Save Settings");
+    EEPROM.put(0, data);              // сохраняем
+    if (EEPROM.commit()) {
+      DEBUGLN("EEPROM successfully committed");
+    } else {
+      DEBUGLN("ERROR! EEPROM commit failed");
+    } 
   }
 /********************************************Основной цикл работы программы**********************************************/
   if (powerTransitionState != 0 && handlePowerTransition()) return;
@@ -723,69 +768,6 @@ void showMinMaxBrightness(){
   }
 }
 
-
-void setupWiFi() {
-  WiFi.mode(WIFI_AP_STA);
-
-  if (data.wifiConfigured && strlen(data.wifiSsid) > 0) {
-    WiFi.begin(data.wifiSsid, data.wifiPass);
-  } else if (strlen(WIFI_SSID) > 0) {
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-  }
-
-  if (WiFi.SSID().length() > 0) {
-    uint32_t start = millis();
-    while (WiFi.status() != WL_CONNECTED && millis() - start < 15000UL) {
-      delay(250);
-      Serial.print(".");
-    }
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("WiFi connected, IP: ");
-    Serial.println(WiFi.localIP());
-  } else {
-    Serial.println();
-    Serial.println("WiFi not connected, AP mode enabled for setup");
-  }
-
-  WiFi.softAP(AP_SSID, AP_PASS);
-  Serial.print("AP IP: ");
-  Serial.println(WiFi.softAPIP());
-}
-
-
-void setupUpdateServer() {
-  updateServer.on("/", HTTP_GET, []() {
-    String page = "<html><head><meta charset='utf-8'><title>Firmware update</title></head><body>";
-    page += "<h2>OTA update</h2><form method='POST' action='/update' enctype='multipart/form-data'>";
-    page += "<input type='file' name='firmware'><input type='submit' value='Upload'></form>";
-    page += "</body></html>";
-    updateServer.send(200, "text/html", page);
-  });
-
-  updateServer.on("/update", HTTP_POST, []() {
-    bool ok = !Update.hasError();
-    updateServer.send(200, "text/plain", ok ? "OK. Rebooting..." : "Update failed");
-    delay(200);
-    if (ok) ESP.restart();
-  }, []() {
-    HTTPUpload& upload = updateServer.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-      WiFiUDP::stopAll();
-      uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
-      Update.begin(maxSketchSpace);
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-      Update.write(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
-      Update.end(true);
-    }
-  });
-
-  updateServer.begin();
-}
-
 void changePowerState(bool on) {
   if (powerOn == on) return;
 
@@ -801,7 +783,13 @@ void changePowerState(bool on) {
 
   powerOn = on;
   data.powerOn = powerOn;
-  memory.update();
+  DEBUGLN("Save Settings");
+  EEPROM.put(0, data);              // сохраняем
+  if (EEPROM.commit()) {
+    DEBUGLN("EEPROM successfully committed");
+  } else {
+    DEBUGLN("ERROR! EEPROM commit failed");
+  } 
 }
 
 void changeBrightness(int delta) {
@@ -819,7 +807,13 @@ void changeBrightness(int delta) {
   Serial.print("Brightness = ");
   Serial.println(globalBrightness);
   data.globalBrightness = globalBrightness;
-  memory.update();
+  DEBUGLN("Save Settings");
+  EEPROM.put(0, data);              // сохраняем
+  if (EEPROM.commit()) {
+    DEBUGLN("EEPROM successfully committed");
+  } else {
+    DEBUGLN("ERROR! EEPROM commit failed");
+  }
 }
 
 

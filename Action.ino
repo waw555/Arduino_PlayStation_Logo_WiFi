@@ -5,12 +5,6 @@ void action(GyverPortal& p) {
     if(useLocalAddress){
       p.copyStr("la", data.localAddress); // Копируем данные из поля la в переменную data.localAddress
     };
-    if(mqttEnable){
-      p.copyStr("mqtts", data.mqttserver);  // копируем сервер mqtt
-      p.copyStr("mqttp", data.mqttport);  // копируем сервер mqtt
-      p.copyStr("mqttlog", data.mqttlogin);  // копируем сервер mqtt
-      p.copyStr("mqttpass", data.mqttpassword);  // копируем сервер mqtt
-    }
     EEPROM.put(0, data);              // сохраняем
     if (EEPROM.commit()) {  //Записываем
       DEBUGLN("EEPROM successfully committed"); //Запись прошла успешно
@@ -58,12 +52,6 @@ void action(GyverPortal& p) {
     if (ui.clickInt("hysTemp", data.tempHyst)) {
       DEBUG("hysTemp: ");
       DEBUGLN(data.tempHyst);
-    }
-
-    if (ui.clickBool("useMQTT", data.mqttEnable)) {
-      mqttEnable = data.mqttEnable;      
-      DEBUG("useMQTT: ");
-      DEBUGLN(data.mqttEnable);
     }
 
     if (ui.clickBool("useLocAdd", data.useLocalAddress)) {
