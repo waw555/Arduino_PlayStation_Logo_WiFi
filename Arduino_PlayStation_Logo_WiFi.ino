@@ -28,15 +28,28 @@
 #define EB_STEP_TIME 50    // таймаут импульсного удержания (кнопка)
 // #define EB_FAST_TIME 30     // таймаут быстрого поворота (энкодер)
 
+#include <GyverPortal.h>                    //Портал
+#include <EEPROM.h>                         //Память для сохранения настроек
+#include <LittleFS.h>                       //Файловая система
+#include <PubSubClient.h>
 #include <EncButton.h>                      //Библиотека для кнопки
 #include <EEManager.h>                      //Библитека памяти
 #include <ESP8266WiFi.h>
-#include <GyverPortal.h>
 #include <ESP8266WebServer.h>
 #if defined(ESP8266)
 #include <Updater.h>
 #else
 #include <Update.h>
+#endif
+
+//ОТЛАДКА
+#define DEBUG_ENABLE //Расскоментируй для включения отладки в порт
+
+#ifdef DEBUG_ENABLE
+#define DEBUG(x) Serial.print(x)
+#define DEBUGLN(x) Serial.println(x)
+#else
+#define DEBUG(x)
 #endif
 
 #define MAX_BRIGHTNESS 255 //Максимальная яркость 0-255
@@ -71,6 +84,9 @@
 #define BUTTON_PIN_PREV 2       //  Пин - Кнопка Назад
 #define BUTTON_PIN_NEXT 13      //  Пин - Кнопка Вперед
 #define BUTTON_PIN_MODE 5       //  Пин - Кнопка Режим
+
+#define INIT_ADDR 500  // номер резервной ячейки для инициализации и первой проверки памяти
+#define INIT_KEY 51     // При любых изменениях в структурированных данных измените ключ  или стирайте память при прошивке.
 
 Button btnOn(BUTTON_PIN_ON, INPUT_PULLUP); // Вкл/Выкл - btnOn
 Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP); // Назад - btnPrev
@@ -135,7 +151,7 @@ bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 
 
-GyverPortal portal;
+GyverPortal ui(&LittleFS);
 ESP8266WebServer updateServer(8080);
 
 void buildPortal();
@@ -144,6 +160,23 @@ void setupWiFi();
 void setupUpdateServer();
 void changePowerState(bool on);
 void changeBrightness(int delta);
+
+/**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
+struct SettingsData {
+  bool powerOnOff = false; // Ячейка 0 - Включение выключение устройства
+  char ssid[20] = "SSID"; //SSID
+  char pass[20] = "PASSWORD";  //Пароль
+  bool useLocalAddress = false;
+  char localAddress[20] = "hood";
+  bool mqttEnable = false;  //Использовать MQTT или нет
+  char mqttserver[40] = "test.mqtt.ru"; // имя сервера MQTT
+  char mqttport[10] = "8080"; //Порт MQTT
+  char mqttlogin[20] = "LOGIN"; //Логин MQTT
+  char mqttpassword[20] = "PASSWORD"; //Пароль MQTT
+  bool operatingMode = false; //Режим измерения
+};
+
+SettingsData data;
 
 
 void setup() {
