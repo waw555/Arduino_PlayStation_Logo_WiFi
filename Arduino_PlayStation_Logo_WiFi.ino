@@ -28,7 +28,8 @@
 #define EB_STEP_TIME 50    // таймаут импульсного удержания (кнопка)
 // #define EB_FAST_TIME 30     // таймаут быстрого поворота (энкодер)
 
-#include <GyverPortal.h>                    //Портал
+#define USE_SETTINGS_UI 0   // 1 - включить UI на базе Settings (этапная миграция)
+#include <GyverPortal.h>                    //Портал (временно, до полного перехода на Settings)
 #include <EEPROM.h>                         //Память для сохранения настроек
 #include <LittleFS.h>                       //Файловая система
 #include <PubSubClient.h>
