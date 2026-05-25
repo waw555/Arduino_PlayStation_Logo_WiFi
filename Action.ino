@@ -1,95 +1,76 @@
 void action(GyverPortal& p) {
-  if (p.form("/connect")) {      // кнопка нажата
-    p.copyStr("lg", data.ssid);  // Копируем данные из поля lg в переменную data.ssid
-    p.copyStr("ps", data.pass); // Копируем данные из поля ps в переменную data.pass
-    if(useLocalAddress){
-      p.copyStr("la", data.localAddress); // Копируем данные из поля la в переменную data.localAddress
-    };
-    EEPROM.put(0, data);              // сохраняем
-    if (EEPROM.commit()) {  //Записываем
-      DEBUGLN("EEPROM successfully committed"); //Запись прошла успешно
+  if (p.form("/connect")) {
+    p.copyStr("lg", data.ssid);
+    p.copyStr("ps", data.pass);
+    if (useLocalAddress) {
+      p.copyStr("la", data.localAddress);
+    }
+    data.useLocalAddress = useLocalAddress;
+    data.powerOn = powerOn;
+    data.globalBrightness = globalBrightness;
+    data.currentMode = currentMode;
+
+    EEPROM.put(0, data);
+    if (EEPROM.commit()) {
+      DEBUGLN("EEPROM successfully committed");
     } else {
-      DEBUGLN("ERROR! EEPROM commit failed"); //Запись не прошла
+      DEBUGLN("ERROR! EEPROM commit failed");
     }
     delay(100);
     DEBUGLN("SYSTEM RESTART");
-    ESP.restart(); // Перезагрузка микроконтроллера
+    ESP.restart();
   }
 
-  //Если изменились настройки
   if (ui.click()) {
-    if (ui.clickInt("mode", data.operatingMode)) {
-      operatingMode = data.operatingMode;
-      DEBUG("Type: ");
-      DEBUGLN(data.operatingMode);
-    }
-    
-    if (ui.clickInt("onHumi", data.humiOn)) {
-      DEBUG("onHumi: ");
-      DEBUGLN(data.humiOn);
+    if (ui.clickBool("power", powerOn)) {
+      changePowerState(powerOn);
+      DEBUG("Power: ");
+      DEBUGLN(powerOn);
     }
 
-    if (ui.clickInt("offHumi", data.humiOff)) {
-      DEBUG("offHumi: ");
-      DEBUGLN(data.humiOff);
+    int brightnessValue = globalBrightness;
+    if (ui.clickInt("brightness", brightnessValue)) {
+      globalBrightness = constrain(brightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      data.globalBrightness = globalBrightness;
+      DEBUG("Brightness: ");
+      DEBUGLN(globalBrightness);
     }
 
-    if (ui.clickInt("hysHumi", data.humiHyst)) {
-      DEBUG("hysHumi: ");
-      DEBUGLN(data.humiHyst);
-    }
-
-    if (ui.clickInt("onTemp", data.tempOn)) {
-      DEBUG("onTemp: ");
-      DEBUGLN(data.tempOn);
-    }
-
-    if (ui.clickInt("offTemp", data.tempOff)) {
-      DEBUG("offTemp: ");
-      DEBUGLN(data.tempOff);
-    }
-
-    if (ui.clickInt("hysTemp", data.tempHyst)) {
-      DEBUG("hysTemp: ");
-      DEBUGLN(data.tempHyst);
+    int modeValue = currentMode;
+    if (ui.clickInt("mode", modeValue)) {
+      currentMode = constrain(modeValue, 0, 8);
+      oldMode = currentMode;
+      initModeState(currentMode);
+      data.currentMode = currentMode;
+      DEBUG("Mode: ");
+      DEBUGLN(currentMode);
     }
 
     if (ui.clickBool("useLocAdd", data.useLocalAddress)) {
-      useLocalAddress = data.useLocalAddress;      
+      useLocalAddress = data.useLocalAddress;
       DEBUG("useLocalAddress: ");
-      DEBUGLN(data.useLocalAddress);
+      DEBUGLN(useLocalAddress);
     }
 
-    if (ui.clickBool("manMode", manualMode)) {
-      DEBUG("Manual Mode = : ");
-      DEBUGLN(manualMode);
-    }
+    if (ui.click("btnSaveSettings")) {
+      data.powerOn = powerOn;
+      data.globalBrightness = globalBrightness;
+      data.currentMode = currentMode;
+      data.useLocalAddress = useLocalAddress;
 
-    if (ui.clickBool("OutInvert", data.invertOut)) {
-      invertOut = data.invertOut;
-      DEBUG("Invert Out = ");
-      DEBUGLN(invertOut);
-    }
-
-    if (ui.clickBool("switchFan", statusFan)) {
-      DEBUG("statusFan: ");
-      DEBUGLN(statusFan);        
-    }
-    
-    if (ui.click("btnSaveSettings")){
       DEBUGLN("Save Settings");
-        EEPROM.put(0, data);              // сохраняем
-        if (EEPROM.commit()) {
-          DEBUGLN("EEPROM successfully committed");
-        } else {
-          DEBUGLN("ERROR! EEPROM commit failed");
-        }     
+      EEPROM.put(0, data);
+      if (EEPROM.commit()) {
+        DEBUGLN("EEPROM successfully committed");
+      } else {
+        DEBUGLN("ERROR! EEPROM commit failed");
+      }
     }
   }
-  // Если было обновление
+
   if (ui.update()) {
-    if (ui.update("fan")) ui.answer(statusFan);
-    ui.updateInt("tempValue", currentTemperature);
-    ui.updateInt("humiValue", currentHumidity);
+    ui.updateBool("power", powerOn);
+    ui.updateInt("brightnessVal", globalBrightness);
+    ui.updateInt("modeVal", currentMode);
   }
 }
