@@ -158,6 +158,7 @@ SettingsData data;  // переменная, с которой мы работа
 void initModeState(uint8_t mode);
 bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
+void sanitizeLoadedSettings();
 
 uint32_t time_connect = 0; // временная переменная для расчета времени до запуска точки доступа
 uint32_t time_manual_mode = 0; //Переменная времени для ручного режима запуска
@@ -193,6 +194,7 @@ void setup() {
   }
   delay(50);
   EEPROM.get(0, data); // Читаем данные из памяти
+  sanitizeLoadedSettings();
   delay(100);
   powerOn = data.powerOn; 
   globalBrightness = data.globalBrightness; 
@@ -253,6 +255,22 @@ void setup() {
   ui.enableOTA();   // OTA обновление прошивки без пароля
   //ui.enableOTA("admin", "pass");  // с паролем
   ui.downloadAuto(true);
+}
+
+void sanitizeLoadedSettings() {
+  data.currentMode = constrain(data.currentMode, 0, MODE_COUNT - 1);
+  data.selectedMode = constrain(data.selectedMode, 0, MODE_COUNT - 1);
+  data.globalBrightness = constrain(data.globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+
+  for (uint8_t i = 0; i < MODE_COUNT; i++) {
+    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    data.modeSpeed[i] = constrain(data.modeSpeed[i], 1, 10);
+  }
+
+  data.autoModeOrderCount = constrain(data.autoModeOrderCount, 0, AUTO_MODES_MAX);
+  for (uint8_t i = 0; i < AUTO_MODES_MAX; i++) {
+    data.autoModeOrder[i] = constrain(data.autoModeOrder[i], 0, MODE_COUNT - 2);
+  }
 }
 /*******************Запускаем портал с формой для подключения к WiFi************************************/
 void startAPAndFormForConnectToWIFI() {
