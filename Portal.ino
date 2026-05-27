@@ -16,7 +16,7 @@ void build() {
         GP.BREAK();
         GP.HR(GP_GRAY);
         GP.BREAK();
-        M_BOX(GP.LABEL("Использовать адрес"); GP.CHECK("useLocAdd", data.useLocalAddress););
+        M_BOX(GP.LABEL("Использовать локальный адрес"); GP.CHECK("useLocAdd", data.useLocalAddress););
         if (useLocalAddress) {
           M_BOX(GP.SPAN("http://", GP_RIGHT); GP.TEXT("la", "Адрес", data.localAddress, "", 20); GP.SPAN(".local", GP_LEFT););
         }
