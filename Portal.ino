@@ -1,7 +1,20 @@
 
 
 char** getModeLabels() {
-  static char* labels[] = {(char*)"Режим 1", (char*)"Режим 2", (char*)"Режим 3", (char*)"Режим 4", (char*)"Режим 5", (char*)"Режим 6", (char*)"Режим 7", (char*)"Режим 8", (char*)"Режим 9", (char*)"Режим 10", (char*)"Случайно", (char*)"Автоматически"};
+  static char mode1[] = "Режим 1";
+  static char mode2[] = "Режим 2";
+  static char mode3[] = "Режим 3";
+  static char mode4[] = "Режим 4";
+  static char mode5[] = "Режим 5";
+  static char mode6[] = "Режим 6";
+  static char mode7[] = "Режим 7";
+  static char mode8[] = "Режим 8";
+  static char mode9[] = "Режим 9";
+  static char mode10[] = "Режим 10";
+  static char randomMode[] = "Случайно";
+  static char autoMode[] = "Автоматически";
+
+  static char* labels[] = {mode1, mode2, mode3, mode4, mode5, mode6, mode7, mode8, mode9, mode10, randomMode, autoMode};
   return labels;
 }
 
