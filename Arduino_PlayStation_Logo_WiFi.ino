@@ -160,6 +160,15 @@ bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 void sanitizeLoadedSettings();
 
+
+const char* getModeLabel(uint8_t modeIndex) {
+  static const char* const labels[MODE_COUNT] = {
+    "Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6",
+    "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически"
+  };
+  return labels[constrain(modeIndex, 0, MODE_COUNT - 1)];
+}
+
 uint32_t time_connect = 0; // временная переменная для расчета времени до запуска точки доступа
 uint32_t time_manual_mode = 0; //Переменная времени для ручного режима запуска
 bool enableAP = false; // проверка запущена ли точка доступа

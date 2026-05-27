@@ -39,7 +39,7 @@ void action(GyverPortal& p) {
 
     int modeValue = currentMode;
     if (ui.clickInt("mode", modeValue)) {
-      currentMode = constrain(modeValue, 0, 11);
+      currentMode = constrain(modeValue, 0, MODE_COUNT - 1);
       oldMode = currentMode;
       initModeState(currentMode);
       data.selectedMode = currentMode;
@@ -114,7 +114,8 @@ void action(GyverPortal& p) {
     uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     ui.updateBool("power", powerOn);
     ui.updateInt("brightnessVal", globalBrightness);
-    ui.updateInt("modeVal", currentMode);
+    ui.updateInt("modeVal", currentMode + 1);
+    ui.updateString("modeValText", getModeLabel(currentMode));
     if (ui.uri("/settings")) {
       ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
     }
