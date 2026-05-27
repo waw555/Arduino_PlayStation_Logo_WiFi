@@ -3,8 +3,9 @@
 const char* const* getModeLabels() {
   // Формат GP.SELECT: массив C-строк, конец списка — nullptr
   static const char* const labels[] = {
-    "Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6",
-    "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически",
+    getModeLabel(0), getModeLabel(1), getModeLabel(2), getModeLabel(3),
+    getModeLabel(4), getModeLabel(5), getModeLabel(6), getModeLabel(7),
+    getModeLabel(8), getModeLabel(9), getModeLabel(10), getModeLabel(11),
     nullptr
   };
   return labels;
@@ -22,7 +23,7 @@ const char* getAutoModeKey(uint8_t i) {
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightnessVal,modeVal");
+  GP.UPDATE("power,brightnessVal,modeVal,modeValText");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd");
 
@@ -64,7 +65,7 @@ void build() {
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость"); GP.LABEL_BLOCK(String(globalBrightness), "brightnessVal"););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.LABEL_BLOCK(String(currentMode), "modeVal"););
+          M_BOX(GP.LABEL("Режим"); GP.LABEL_BLOCK(String(currentMode + 1), "modeVal"); GP.LABEL_BLOCK(getModeLabel(currentMode), "modeValText"););
         );
       );
     } else if (ui.uri("/settings")) {
