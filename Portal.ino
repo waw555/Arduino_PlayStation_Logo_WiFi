@@ -32,11 +32,6 @@ void build() {
     GP.UI_LINK("/connect", "Подключение");
     GP.UI_LINK("/ota_update", "Обновление");
 
-    GP.HR(GP_GRAY);
-    GP.LABEL("Текущее время");
-    GP.BREAK();
-    GP.LABEL(ui.getSystemTime().encode());
-
     GP.UI_BODY();
     GP.GRID_RESPONSIVE(700);
 
@@ -55,11 +50,9 @@ void build() {
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
-          M_BOX(GP.LABEL("Яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
+          M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SPINNER("mode", currentMode, 0, 8););
-          GP.BREAK();
-          M_BOX(GP.LABEL("Использовать локальный адрес"); GP.SWITCH("useLocAdd", data.useLocalAddress););
           GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
         );
@@ -75,7 +68,7 @@ void build() {
           GP.BREAK();
           GP.HR(GP_GRAY);
           GP.BREAK();
-          M_BOX(GP.LABEL("Использовать адрес"); GP.CHECK("useLocAdd", data.useLocalAddress););
+          M_BOX(GP.LABEL("Использовать локальный адрес"); GP.CHECK("useLocAdd", data.useLocalAddress););
           if (useLocalAddress) {
             M_BOX(GP.SPAN("http://"); GP.TEXT("la", "Адрес", data.localAddress, "", 20); GP.SPAN(".local"););
           }
