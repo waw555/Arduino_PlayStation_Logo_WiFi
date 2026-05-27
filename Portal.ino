@@ -17,7 +17,7 @@ const char* getAutoModeKey(uint8_t i) {
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightnessVal,modeVal,modeBrightnessLimitVal");
+  GP.UPDATE("power,brightnessVal,modeVal");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd");
 
