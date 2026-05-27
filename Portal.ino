@@ -1,3 +1,19 @@
+
+
+char** getModeLabels() {
+  static char* labels[] = {(char*)"Режим 1", (char*)"Режим 2", (char*)"Режим 3", (char*)"Режим 4", (char*)"Режим 5", (char*)"Режим 6", (char*)"Режим 7", (char*)"Режим 8", (char*)"Режим 9", (char*)"Режим 10", (char*)"Случайно", (char*)"Автоматически"};
+  return labels;
+}
+
+const char* getAutoModeLabel(uint8_t i) {
+  static const char* labels[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно"};
+  return (i < 11) ? labels[i] : "Режим";
+}
+
+const char* getAutoModeKey(uint8_t i) {
+  static const char* keys[] = {"autoM0", "autoM1", "autoM2", "autoM3", "autoM4", "autoM5", "autoM6", "autoM7", "autoM8", "autoM9", "autoM10"};
+  return (i < 11) ? keys[i] : "autoM0";
+}
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
@@ -48,13 +64,12 @@ void build() {
       );
     } else if (ui.uri("/settings")) {
       uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
-      static const char* const modes[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически"};
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
           M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)modes, MODE_COUNT, currentMode););
+          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", getModeLabels(), MODE_COUNT, currentMode););
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
@@ -66,11 +81,7 @@ void build() {
           GP.BREAK();
           GP.LABEL("Авто: доступные режимы");
           for (uint8_t i = 0; i < 11; i++) {
-            char modeLabel[16];
-            char autoModeKey[8];
-            snprintf(modeLabel, sizeof(modeLabel), "Режим %u", i + 1);
-            snprintf(autoModeKey, sizeof(autoModeKey), "autoM%u", i);
-            M_BOX(GP.LABEL(modeLabel); GP.CHECK(autoModeKey, modeEnabledInAuto[i]););
+            M_BOX(GP.LABEL(getAutoModeLabel(i)); GP.CHECK(getAutoModeKey(i), modeEnabledInAuto[i]););
           }
           GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
