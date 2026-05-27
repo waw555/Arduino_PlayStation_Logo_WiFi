@@ -71,9 +71,10 @@ void action(GyverPortal& p) {
     }
 
     for (uint8_t i = 0; i < 11; i++) {
-      String key = String("autoM") + String(i);
+      char autoModeKey[8];
+      snprintf(autoModeKey, sizeof(autoModeKey), "autoM%u", i);
       bool enabled = modeEnabledInAuto[i];
-      if (ui.clickBool(key, enabled)) modeEnabledInAuto[i] = enabled;
+      if (ui.clickBool(autoModeKey, enabled)) modeEnabledInAuto[i] = enabled;
     }
 
     if (ui.clickBool("useLocAdd", data.useLocalAddress)) {

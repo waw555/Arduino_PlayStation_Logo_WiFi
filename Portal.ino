@@ -48,13 +48,13 @@ void build() {
       );
     } else if (ui.uri("/settings")) {
       uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
-      char* modes[] = {(char*)"Режим 1", (char*)"Режим 2", (char*)"Режим 3", (char*)"Режим 4", (char*)"Режим 5", (char*)"Режим 6", (char*)"Режим 7", (char*)"Режим 8", (char*)"Режим 9", (char*)"Режим 10", (char*)"Случайно", (char*)"Автоматически"};
+      static const char* const modes[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически"};
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
           M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", modes, 12, currentMode););
+          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)modes, MODE_COUNT, currentMode););
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
@@ -66,7 +66,11 @@ void build() {
           GP.BREAK();
           GP.LABEL("Авто: доступные режимы");
           for (uint8_t i = 0; i < 11; i++) {
-            M_BOX(GP.LABEL(String("Режим ") + String(i + 1)); GP.CHECK(String("autoM") + String(i), modeEnabledInAuto[i]););
+            char modeLabel[16];
+            char autoModeKey[8];
+            snprintf(modeLabel, sizeof(modeLabel), "Режим %u", i + 1);
+            snprintf(autoModeKey, sizeof(autoModeKey), "autoM%u", i);
+            M_BOX(GP.LABEL(modeLabel); GP.CHECK(autoModeKey, modeEnabledInAuto[i]););
           }
           GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
