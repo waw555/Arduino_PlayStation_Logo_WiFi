@@ -82,7 +82,7 @@ void build() {
           "НАСТРОЙКИ",
           M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", getModeLabels(), MODE_COUNT, currentMode););
+          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", getModeLabels(), MODE_COUNT, modeIndex););
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
