@@ -1,22 +1,12 @@
 
 
-char** getModeLabels() {
-  // Формат GP.SELECT: массив char**, последний пункт должен быть пустой строкой
-  static char mode1[] = "Режим 1";
-  static char mode2[] = "Режим 2";
-  static char mode3[] = "Режим 3";
-  static char mode4[] = "Режим 4";
-  static char mode5[] = "Режим 5";
-  static char mode6[] = "Режим 6";
-  static char mode7[] = "Режим 7";
-  static char mode8[] = "Режим 8";
-  static char mode9[] = "Режим 9";
-  static char mode10[] = "Режим 10";
-  static char randomMode[] = "Случайно";
-  static char autoMode[] = "Автоматически";
-  static char terminator[] = "";
-
-  static char* labels[] = {mode1, mode2, mode3, mode4, mode5, mode6, mode7, mode8, mode9, mode10, randomMode, autoMode, terminator};
+const char* const* getModeLabels() {
+  // Формат GP.SELECT: массив C-строк, конец списка — nullptr
+  static const char* const labels[] = {
+    "Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6",
+    "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически",
+    nullptr
+  };
   return labels;
 }
 
@@ -84,7 +74,7 @@ void build() {
           "НАСТРОЙКИ",
           M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", getModeLabels(), modeIndex, false););
+          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
