@@ -351,7 +351,7 @@ void loop() {
   }
 
   if (powerOn){
-    if (currentMode == 11 && millis() - autoModeTimer >= (AUTO_MODE_INTERVAL / max(1, modeSpeed[11]))) {
+    if (currentMode == 11 && millis() - autoModeTimer >= (AUTO_MODE_INTERVAL / max<uint8_t>(1, modeSpeed[11]))) {
       if (autoModeOrderCount > 0) {
         autoModeCurrent = autoModeOrder[autoModeOrderIndex % autoModeOrderCount];
         autoModeOrderIndex = (autoModeOrderIndex + 1) % autoModeOrderCount;
