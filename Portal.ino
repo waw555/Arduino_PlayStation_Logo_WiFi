@@ -47,6 +47,7 @@ void build() {
         );
       );
     } else if (ui.uri("/settings")) {
+      uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
       char* modes[] = {(char*)"Режим 1", (char*)"Режим 2", (char*)"Режим 3", (char*)"Режим 4", (char*)"Режим 5", (char*)"Режим 6", (char*)"Режим 7", (char*)"Режим 8", (char*)"Режим 9", (char*)"Режим 10", (char*)"Случайно", (char*)"Автоматически"};
       M_GRID(
         M_BLOCK_TAB(
@@ -55,9 +56,9 @@ void build() {
           GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", modes, 12, currentMode););
           GP.BREAK();
-          M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[currentMode], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[currentMode]), "modeBrightnessLimitVal"););
+          M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
-          M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[currentMode], 1, 10););
+          M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
           GP.BREAK();
           M_BOX(GP.LABEL("Таймер отключения (мин)"); GP.SPINNER("offTimerMinutes", data.offTimerMinutes, 0, 1440, 5););
           GP.BREAK();

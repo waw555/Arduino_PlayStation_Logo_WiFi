@@ -22,6 +22,7 @@ void action(GyverPortal& p) {
   }
 
   if (ui.click()) {
+    uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     if (ui.clickBool("power", powerOn)) {
       changePowerState(powerOn);
       DEBUG("Power: ");
@@ -46,14 +47,14 @@ void action(GyverPortal& p) {
       DEBUG("Mode: ");
       DEBUGLN(currentMode);
     }
-    int modeBrightness = modeBrightnessLimit[currentMode];
+    int modeBrightness = modeBrightnessLimit[modeIndex];
     if (ui.clickInt("modeBrightnessLimit", modeBrightness)) {
-      modeBrightnessLimit[currentMode] = constrain(modeBrightness, MIN_BRIGHTNESS, globalBrightness);
+      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, globalBrightness);
     }
 
-    int modeSpeedVal = modeSpeed[currentMode];
+    int modeSpeedVal = modeSpeed[modeIndex];
     if (ui.clickInt("modeSpeed", modeSpeedVal)) {
-      modeSpeed[currentMode] = constrain(modeSpeedVal, 1, 10);
+      modeSpeed[modeIndex] = constrain(modeSpeedVal, 1, 10);
     }
 
     int offTimerMinutes = data.offTimerMinutes;
@@ -109,9 +110,10 @@ void action(GyverPortal& p) {
   }
 
   if (ui.update()) {
+    uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     ui.updateBool("power", powerOn);
     ui.updateInt("brightnessVal", globalBrightness);
     ui.updateInt("modeVal", currentMode);
-    ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[currentMode]);
+    ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
   }
 }
