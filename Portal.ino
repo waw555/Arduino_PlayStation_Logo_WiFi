@@ -1,7 +1,7 @@
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightnessVal,modeVal");
+  GP.UPDATE("power,brightnessVal,modeVal,modeBrightnessLimitVal");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd");
 
@@ -47,12 +47,26 @@ void build() {
         );
       );
     } else if (ui.uri("/settings")) {
+      const char* modes[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически"};
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
           M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS););
           GP.BREAK();
-          M_BOX(GP.LABEL("Режим"); GP.SPINNER("mode", currentMode, 0, 8););
+          M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", modes, 12, currentMode););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[currentMode], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[currentMode]), "modeBrightnessLimitVal"););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[currentMode], 1, 10););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Таймер отключения (мин)"); GP.SPINNER("offTimerMinutes", data.offTimerMinutes, 0, 1440, 5););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Отключить в (мин от старта)"); GP.SPINNER("offAtMinutes", 0, 0, 1440, 5););
+          GP.BREAK();
+          GP.LABEL("Авто: доступные режимы");
+          for (uint8_t i = 0; i < 11; i++) {
+            M_BOX(GP.LABEL(String("Режим ") + String(i + 1)); GP.CHECK(String("autoM") + String(i), modeEnabledInAuto[i]););
+          }
           GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
         );
