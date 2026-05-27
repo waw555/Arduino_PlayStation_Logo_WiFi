@@ -77,6 +77,8 @@
 #define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1 //
 #define POWER_OFF_FADE_INTERVAL 10UL        //
 #define AUTO_MODE_INTERVAL 60000UL          //Время изменения режимов в автоматическом режиме
+#define MODE_COUNT 12
+#define AUTO_MODES_MAX 8
 
 Button btnOn(BUTTON_PIN_ON, INPUT_PULLUP);      // Вкл/Выкл - btnOn
 Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP);  // Назад - btnPrev
@@ -121,8 +123,17 @@ uint16_t mode6Interval[4] = {0, 0, 0, 0};
 uint32_t mode6Timer[4] = {0, 0, 0, 0};
 uint32_t pulseLedTimer[4] = {0, 0, 0, 0};
 uint32_t autoModeTimer = 0;
+uint32_t autoOffAtMillis = 0;
+uint32_t autoOffDurationMs = 0;
+uint32_t manualOffStart = 0;
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
+uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7};
+uint8_t autoModeOrderCount = AUTO_MODES_MAX;
+uint8_t autoModeOrderIndex = 0;
+uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false};
 
 /**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
 struct SettingsData {
@@ -133,6 +144,13 @@ struct SettingsData {
   char pass[20] = "PASSWORD";         //Пароль
   bool useLocalAddress = false;       //Использовать локальный адрес или нет
   char localAddress[20] = "pslogo";     //Локальный адрес http://pslogo.local
+  uint8_t selectedMode = 0;
+  uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+  uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+  bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false};
+  uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7};
+  uint8_t autoModeOrderCount = AUTO_MODES_MAX;
+  uint16_t offTimerMinutes = 0;
 };
 
 SettingsData data;  // переменная, с которой мы работаем в программе
@@ -182,6 +200,11 @@ void setup() {
   useLocalAddress = data.useLocalAddress;
 
   oldMode = currentMode;
+  memcpy(modeBrightnessLimit, data.modeBrightnessLimit, sizeof(modeBrightnessLimit));
+  memcpy(modeSpeed, data.modeSpeed, sizeof(modeSpeed));
+  memcpy(modeEnabledInAuto, data.modeEnabledInAuto, sizeof(modeEnabledInAuto));
+  memcpy(autoModeOrder, data.autoModeOrder, sizeof(autoModeOrder));
+  autoModeOrderCount = data.autoModeOrderCount;
   randomSeed(micros());
   initModeState(currentMode);
 
@@ -318,10 +341,23 @@ void loop() {
   }
 /********************************************Основной цикл работы программы**********************************************/
   if (powerTransitionState != 0 && handlePowerTransition()) return;
+  if (autoOffAtMillis > 0 && millis() >= autoOffAtMillis && powerOn) {
+    changePowerState(false);
+    autoOffAtMillis = 0;
+  }
+  if (autoOffDurationMs > 0 && powerOn && millis() - manualOffStart >= autoOffDurationMs) {
+    changePowerState(false);
+    autoOffDurationMs = 0;
+  }
 
   if (powerOn){
-    if (currentMode == 11 && millis() - autoModeTimer >= AUTO_MODE_INTERVAL) {
-      autoModeCurrent = random(0, 11);
+    if (currentMode == 11 && millis() - autoModeTimer >= (AUTO_MODE_INTERVAL / max(1, modeSpeed[11]))) {
+      if (autoModeOrderCount > 0) {
+        autoModeCurrent = autoModeOrder[autoModeOrderIndex % autoModeOrderCount];
+        autoModeOrderIndex = (autoModeOrderIndex + 1) % autoModeOrderCount;
+      } else {
+        autoModeCurrent = random(0, 11);
+      }
       initModeState(autoModeCurrent);
       autoModeTimer = millis();
     }
