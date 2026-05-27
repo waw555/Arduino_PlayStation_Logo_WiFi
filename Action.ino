@@ -115,7 +115,8 @@ void action(GyverPortal& p) {
     ui.updateBool("power", powerOn);
     ui.updateInt("brightnessVal", globalBrightness);
     ui.updateInt("modeVal", currentMode + 1);
-    ui.updateString("modeValText", getModeLabel(currentMode));
+    String modeLabel = getModeLabel(currentMode);
+    ui.updateString("modeValText", modeLabel);
     if (ui.uri("/settings")) {
       ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
     }
