@@ -77,8 +77,8 @@
 #define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1 //
 #define POWER_OFF_FADE_INTERVAL 10UL        //
 #define AUTO_MODE_INTERVAL 60000UL          //Время изменения режимов в автоматическом режиме
-#define MODE_COUNT 12
-#define AUTO_MODES_MAX 8
+#define MODE_COUNT 13
+#define AUTO_MODES_MAX 11
 
 Button btnOn(BUTTON_PIN_ON, INPUT_PULLUP);      // Вкл/Выкл - btnOn
 Button btnPrev(BUTTON_PIN_PREV, INPUT_PULLUP);  // Назад - btnPrev
@@ -128,12 +128,12 @@ uint32_t autoOffDurationMs = 0;
 uint32_t manualOffStart = 0;
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
-uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7};
+uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 uint8_t autoModeOrderCount = AUTO_MODES_MAX;
 uint8_t autoModeOrderIndex = 0;
-uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false};
+uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false, false};
 
 /**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
 struct SettingsData {
@@ -145,10 +145,10 @@ struct SettingsData {
   bool useLocalAddress = false;       //Использовать локальный адрес или нет
   char localAddress[20] = "pslogo";     //Локальный адрес http://pslogo.local
   uint8_t selectedMode = 0;
-  uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-  uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-  bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false};
-  uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7};
+  uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+  uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+  bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false, false};
+  uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   uint8_t autoModeOrderCount = AUTO_MODES_MAX;
   uint16_t offTimerMinutes = 0;
 };
@@ -164,7 +164,7 @@ void sanitizeLoadedSettings();
 const char* getModeLabel(uint8_t modeIndex) {
   static const char* const labels[MODE_COUNT] = {
     "Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6",
-    "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно", "Автоматически"
+    "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Режим 11", "Случайно", "Автоматически"
   };
   return labels[constrain(modeIndex, 0, MODE_COUNT - 1)];
 }
@@ -354,7 +354,7 @@ void loop() {
   {
     //oldMode = currentMode;
     currentMode++;
-    if (currentMode > 11) currentMode = 0;
+    if (currentMode >= MODE_COUNT) currentMode = 0;
     initModeState(currentMode);
     Serial.println("btnMode - click");
     data.currentMode = currentMode;
@@ -378,17 +378,17 @@ void loop() {
   }
 
   if (powerOn){
-    if (currentMode == 11 && millis() - autoModeTimer >= (AUTO_MODE_INTERVAL / max<uint8_t>(1, modeSpeed[11]))) {
-      if (autoModeOrderCount > 0) {
+    if ((currentMode == 11 || currentMode == 12) && millis() - autoModeTimer >= (uint32_t)modeSpeed[currentMode] * 60000UL) {
+      if (currentMode == 11 || autoModeOrderCount == 0) {
+        autoModeCurrent = random(0, 11);
+      } else {
         autoModeCurrent = autoModeOrder[autoModeOrderIndex % autoModeOrderCount];
         autoModeOrderIndex = (autoModeOrderIndex + 1) % autoModeOrderCount;
-      } else {
-        autoModeCurrent = random(0, 11);
       }
       initModeState(autoModeCurrent);
       autoModeTimer = millis();
     }
-    uint8_t modeToRun = (currentMode == 11) ? autoModeCurrent : currentMode;
+    uint8_t modeToRun = (currentMode == 11 || currentMode == 12) ? autoModeCurrent : currentMode;
     runCurrentMode(modeToRun);
   }else{
     setLedsOff(); //Выключаем все диоды
@@ -787,11 +787,15 @@ void initModeState(uint8_t mode) {
         mode8Active[i] = false;
       }
       break;
-    case 100:
     case 11:
+    case 12:
       autoModeCurrent = random(0, 11);
       autoModeTimer = millis();
       initModeState(autoModeCurrent);
+      break;
+    case 100:
+      k = 0;
+      flag = true;
       break;
     default:
       k = 0;

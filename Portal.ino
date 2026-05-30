@@ -6,13 +6,14 @@ const char* const* getModeLabels() {
     getModeLabel(0), getModeLabel(1), getModeLabel(2), getModeLabel(3),
     getModeLabel(4), getModeLabel(5), getModeLabel(6), getModeLabel(7),
     getModeLabel(8), getModeLabel(9), getModeLabel(10), getModeLabel(11),
+    getModeLabel(12),
     nullptr
   };
   return labels;
 }
 
 const char* getAutoModeLabel(uint8_t i) {
-  static const char* labels[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Случайно"};
+  static const char* labels[] = {"Режим 1", "Режим 2", "Режим 3", "Режим 4", "Режим 5", "Режим 6", "Режим 7", "Режим 8", "Режим 9", "Режим 10", "Режим 11"};
   return (i < 11) ? labels[i] : "Режим";
 }
 
@@ -79,16 +80,31 @@ void build() {
           GP.BREAK();
           M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
           GP.BREAK();
-          M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
-          GP.BREAK();
+          if (modeIndex == 1) {
+            M_BOX(GP.LABEL("Скорость включения"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
+            GP.BREAK();
+            M_BOX(GP.LABEL("Скорость выключения"); GP.SLIDER("modeSpeedOff", modeSpeed[modeIndex], 1, 10););
+            GP.BREAK();
+            M_BOX(GP.LABEL("Пауза после включения"); GP.SLIDER("modePauseOn", modeSpeed[modeIndex], 1, 10););
+            GP.BREAK();
+            M_BOX(GP.LABEL("Пауза после выключения"); GP.SLIDER("modePauseOff", modeSpeed[modeIndex], 1, 10););
+            GP.BREAK();
+          } else if (modeIndex >= 2 && modeIndex <= 11) {
+            M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
+            GP.BREAK();
+          }
+          if (modeIndex == 11 || modeIndex == 12) {
+            M_BOX(GP.LABEL("Время смены режима (мин)"); GP.SPINNER("autoPeriodMin", modeSpeed[modeIndex], 1, 60, 1););
+            GP.BREAK();
+            GP.LABEL("Список режимов для смены");
+            for (uint8_t i = 0; i < 11; i++) {
+              M_BOX(GP.LABEL(getAutoModeLabel(i)); GP.CHECK(getAutoModeKey(i), modeEnabledInAuto[i]););
+            }
+            GP.BREAK();
+          }
           M_BOX(GP.LABEL("Таймер отключения (мин)"); GP.SPINNER("offTimerMinutes", data.offTimerMinutes, 0, 1440, 5););
           GP.BREAK();
           M_BOX(GP.LABEL("Отключить в (мин от старта)"); GP.SPINNER("offAtMinutes", 0, 0, 1440, 5););
-          GP.BREAK();
-          GP.LABEL("Авто: доступные режимы");
-          for (uint8_t i = 0; i < 11; i++) {
-            M_BOX(GP.LABEL(getAutoModeLabel(i)); GP.CHECK(getAutoModeKey(i), modeEnabledInAuto[i]););
-          }
           GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
         );
