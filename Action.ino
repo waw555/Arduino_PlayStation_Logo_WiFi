@@ -56,6 +56,10 @@ void action(GyverPortal& p) {
     if (ui.clickInt("modeSpeed", modeSpeedVal)) {
       modeSpeed[modeIndex] = constrain(modeSpeedVal, 1, 10);
     }
+    int autoPeriodMin = modeSpeed[modeIndex];
+    if (ui.clickInt("autoPeriodMin", autoPeriodMin) && (modeIndex == 11 || modeIndex == 12)) {
+      modeSpeed[modeIndex] = constrain(autoPeriodMin, 1, 60);
+    }
 
     int offTimerMinutes = data.offTimerMinutes;
     if (ui.clickInt("offTimerMinutes", offTimerMinutes)) {
