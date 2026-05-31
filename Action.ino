@@ -29,15 +29,6 @@ void action(GyverPortal& p) {
       DEBUGLN(powerOn);
     }
 
-    int brightnessValue = globalBrightness;
-    if (ui.clickInt("brightness", brightnessValue)) {
-      globalBrightness = constrain(brightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-      clampModeBrightnessLimitsToGlobal();
-      data.globalBrightness = globalBrightness;
-      DEBUG("Brightness: ");
-      DEBUGLN(globalBrightness);
-    }
-
     int modeValue = currentMode;
     if (ui.clickInt("mode", modeValue)) {
       currentMode = constrain(modeValue, 0, MODE_COUNT - 1);
@@ -51,12 +42,24 @@ void action(GyverPortal& p) {
     }
     int modeBrightness = modeBrightnessLimit[modeIndex];
     if (ui.clickInt("modeBrightnessLimit", modeBrightness)) {
-      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, globalBrightness);
+      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
     }
 
     int modeSpeedVal = modeSpeed[modeIndex];
     if (ui.clickInt("modeSpeed", modeSpeedVal)) {
-      modeSpeed[modeIndex] = constrain(modeSpeedVal, 1, 10);
+      modeSpeed[modeIndex] = constrain(modeSpeedVal, 1, 5);
+    }
+    int modeSpeedOffVal = modeSpeedOff[modeIndex];
+    if (ui.clickInt("modeSpeedOff", modeSpeedOffVal)) {
+      modeSpeedOff[modeIndex] = constrain(modeSpeedOffVal, 1, 5);
+    }
+    int modePauseOnVal = modePauseOn[modeIndex];
+    if (ui.clickInt("modePauseOn", modePauseOnVal)) {
+      modePauseOn[modeIndex] = constrain(modePauseOnVal, 1, 5);
+    }
+    int modePauseOffVal = modePauseOff[modeIndex];
+    if (ui.clickInt("modePauseOff", modePauseOffVal)) {
+      modePauseOff[modeIndex] = constrain(modePauseOffVal, 1, 5);
     }
     int autoPeriodMin = modeSpeed[modeIndex];
     if (ui.clickInt("autoPeriodMin", autoPeriodMin) && (modeIndex == 11 || modeIndex == 12)) {
@@ -83,6 +86,9 @@ void action(GyverPortal& p) {
       data.useLocalAddress = useLocalAddress;
       memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
       memcpy(data.modeSpeed, modeSpeed, sizeof(modeSpeed));
+      memcpy(data.modeSpeedOff, modeSpeedOff, sizeof(modeSpeedOff));
+      memcpy(data.modePauseOn, modePauseOn, sizeof(modePauseOn));
+      memcpy(data.modePauseOff, modePauseOff, sizeof(modePauseOff));
       memcpy(data.modeEnabledInAuto, modeEnabledInAuto, sizeof(modeEnabledInAuto));
       data.autoModeOrderCount = 0;
       for (uint8_t i = 0; i < 11 && data.autoModeOrderCount < AUTO_MODES_MAX; i++) {
@@ -110,9 +116,7 @@ void action(GyverPortal& p) {
     ui.updateInt("modeVal", currentMode + 1);
     String modeLabel = getModeLabel(currentMode);
     ui.updateString("modeValText", modeLabel);
-    if (ui.uri("/settings")) {
-      ui.updateInt("brightness", globalBrightness);
-      ui.updateInt("brightnessSettingsVal", globalBrightness);
+    if (ui.uri("/settings") && modeIndex <= 10) {
       ui.updateInt("modeBrightnessLimit", modeBrightnessLimit[modeIndex]);
       ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
     }
