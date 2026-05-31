@@ -165,7 +165,7 @@ void runCurrentMode(uint8_t modeToRun);
 void sanitizeLoadedSettings();
 void clampModeBrightnessLimits();
 void clampSegmentBrightness();
-void constrainBrightnessSettingsToGlobal();
+void constrainBrightnessSettings();
 uint8_t getModeBrightness(uint8_t mode);
 uint16_t getModeFadeInterval(uint8_t mode);
 uint16_t getModeFadeOffInterval(uint8_t mode);
@@ -228,7 +228,7 @@ void setup() {
   oldMode = currentMode;
   memcpy(modeBrightnessLimit, data.modeBrightnessLimit, sizeof(modeBrightnessLimit));
   memcpy(segmentBrightness, data.segmentBrightness, sizeof(segmentBrightness));
-  constrainBrightnessSettingsToGlobal();
+  constrainBrightnessSettings();
   memcpy(modeSpeed, data.modeSpeed, sizeof(modeSpeed));
   memcpy(modeSpeedOff, data.modeSpeedOff, sizeof(modeSpeedOff));
   memcpy(modePauseOn, data.modePauseOn, sizeof(modePauseOn));
@@ -292,7 +292,7 @@ void sanitizeLoadedSettings() {
   data.globalBrightness = constrain(data.globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, data.globalBrightness);
+    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
     data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 5, 60) : constrain(data.modeSpeed[i], 1, 5);
     data.modeSpeedOff[i] = constrain(data.modeSpeedOff[i], 1, 5);
     data.modePauseOn[i] = constrain(data.modePauseOn[i], 1, 5);
@@ -311,7 +311,7 @@ void sanitizeLoadedSettings() {
 
 void clampModeBrightnessLimits() {
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    modeBrightnessLimit[i] = constrain(modeBrightnessLimit[i], MIN_BRIGHTNESS, globalBrightness);
+    modeBrightnessLimit[i] = constrain(modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
   }
 }
 
@@ -321,7 +321,7 @@ void clampSegmentBrightness() {
   }
 }
 
-void constrainBrightnessSettingsToGlobal() {
+void constrainBrightnessSettings() {
   globalBrightness = constrain(globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
   clampModeBrightnessLimits();
   clampSegmentBrightness();
@@ -958,12 +958,11 @@ void changeBrightness(int delta) {
     globalBrightness = target;
   }
 
-  constrainBrightnessSettingsToGlobal();
+  constrainBrightnessSettings();
 
   Serial.print("Brightness = ");
   Serial.println(globalBrightness);
   data.globalBrightness = globalBrightness;
-  memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
   memcpy(data.segmentBrightness, segmentBrightness, sizeof(segmentBrightness));
   DEBUGLN("Save Settings");
   EEPROM.put(0, data);              // сохраняем
