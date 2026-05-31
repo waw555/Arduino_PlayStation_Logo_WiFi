@@ -32,9 +32,8 @@ void action(GyverPortal& p) {
     int brightness = globalBrightness;
     if (ui.clickInt("brightness", brightness)) {
       globalBrightness = constrain(brightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-      constrainBrightnessSettingsToGlobal();
+      constrainBrightnessSettings();
       data.globalBrightness = globalBrightness;
-      memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
     }
 
     int modeValue = currentMode;
@@ -50,7 +49,7 @@ void action(GyverPortal& p) {
     }
     int modeBrightness = modeBrightnessLimit[modeIndex];
     if (ui.clickInt("modeBrightnessLimit", modeBrightness)) {
-      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, globalBrightness);
+      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
     }
 
     int segmentValue = segmentBrightness[0];

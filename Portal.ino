@@ -71,7 +71,6 @@ void build() {
       );
     } else if (ui.uri("/settings")) {
       uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
-      uint8_t modeBrightnessValue = constrain(modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness);
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
@@ -91,7 +90,7 @@ void build() {
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
           if (modeIndex <= 10) {
-            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
+            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
             GP.BREAK();
           }
           if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3 || modeIndex == 9 || modeIndex == 10) {
