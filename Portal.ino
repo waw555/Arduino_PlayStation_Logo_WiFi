@@ -24,9 +24,9 @@ const char* getAutoModeKey(uint8_t i) {
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightnessVal,modeVal,modeValText,brightness,brightnessSettingsVal,modeBrightnessLimit,modeBrightnessLimitVal");
+  GP.UPDATE("power,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal");
   GP.ONLINE_CHECK(5000);
-  GP.RELOAD_CLICK("useLocAdd,brightness,mode");
+  GP.RELOAD_CLICK("useLocAdd,mode");
 
   if (enableAP) {
     GP.FORM_BEGIN("/connect");
@@ -71,29 +71,29 @@ void build() {
       );
     } else if (ui.uri("/settings")) {
       uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
-      uint8_t modeBrightnessValue = constrain(modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness);
+      uint8_t modeBrightnessValue = constrain(modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
-          M_BOX(GP.LABEL("Максимальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(globalBrightness), "brightnessSettingsVal"););
-          GP.BREAK();
           GP.HR(); 
           GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
-          M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
-          GP.BREAK();
+          if (modeIndex <= 10) {
+            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
+            GP.BREAK();
+          }
           if (modeIndex == 1) {
-            M_BOX(GP.LABEL("Скорость включения"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
+            M_BOX(GP.LABEL("Скорость включения"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
             GP.BREAK();
-            M_BOX(GP.LABEL("Скорость выключения"); GP.SLIDER("modeSpeedOff", modeSpeed[modeIndex], 1, 10););
+            M_BOX(GP.LABEL("Скорость выключения"); GP.SLIDER("modeSpeedOff", modeSpeedOff[modeIndex], 1, 5););
             GP.BREAK();
-            M_BOX(GP.LABEL("Пауза после включения"); GP.SLIDER("modePauseOn", modeSpeed[modeIndex], 1, 10););
+            M_BOX(GP.LABEL("Пауза после включения"); GP.SLIDER("modePauseOn", modePauseOn[modeIndex], 1, 5););
             GP.BREAK();
-            M_BOX(GP.LABEL("Пауза после выключения"); GP.SLIDER("modePauseOff", modeSpeed[modeIndex], 1, 10););
+            M_BOX(GP.LABEL("Пауза после выключения"); GP.SLIDER("modePauseOff", modePauseOff[modeIndex], 1, 5););
             GP.BREAK();
-          } else if (modeIndex >= 2 && modeIndex <= 11) {
-            M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 10););
+          } else if (modeIndex >= 2 && modeIndex <= 10) {
+            M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
             GP.BREAK();
           }
           if (modeIndex == 11 || modeIndex == 12) {
