@@ -83,9 +83,11 @@ void build() {
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
-          GP.HR(); 
+          GP.LABEL("Глобальная яркость");
           GP.BREAK();
           settingsSliderRow("Глобальная яркость", "brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+          GP.BREAK();
+          GP.HR(); 
           GP.BREAK();
           GP.LABEL("Яркость сегментов");
           settingsSliderRow("Треугольник", "segTriangle", segmentBrightness[0], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
@@ -95,6 +97,8 @@ void build() {
           settingsSliderRow("Крест", "segX", segmentBrightness[2], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
           settingsSliderRow("Квадрат", "segSquare", segmentBrightness[3], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+          GP.BREAK();
+          GP.HR(); 
           GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
