@@ -24,7 +24,7 @@ const char* getAutoModeKey(uint8_t i) {
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightness,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal");
+  GP.UPDATE("power,brightness,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal,segTriangle,segTriangleVal,segCircle,segCircleVal,segX,segXVal,segSquare,segSquareVal");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd,mode");
 
@@ -71,7 +71,7 @@ void build() {
       );
     } else if (ui.uri("/settings")) {
       uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
-      uint8_t modeBrightnessValue = constrain(modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      uint8_t modeBrightnessValue = constrain(modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, globalBrightness);
       M_GRID(
         M_BLOCK_TAB(
           "НАСТРОЙКИ",
@@ -79,10 +79,19 @@ void build() {
           GP.BREAK();
           M_BOX(GP.LABEL("Глобальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(globalBrightness), "brightnessVal"););
           GP.BREAK();
+          GP.LABEL("Яркость сегментов");
+          M_BOX(GP.LABEL("Треугольник"); GP.SLIDER("segTriangle", segmentBrightness[0], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[0]), "segTriangleVal"););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Круг"); GP.SLIDER("segCircle", segmentBrightness[1], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[1]), "segCircleVal"););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Крест"); GP.SLIDER("segX", segmentBrightness[2], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[2]), "segXVal"););
+          GP.BREAK();
+          M_BOX(GP.LABEL("Квадрат"); GP.SLIDER("segSquare", segmentBrightness[3], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[3]), "segSquareVal"););
+          GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
           if (modeIndex <= 10) {
-            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
+            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, globalBrightness); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
             GP.BREAK();
           }
           if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3 || modeIndex == 9 || modeIndex == 10) {

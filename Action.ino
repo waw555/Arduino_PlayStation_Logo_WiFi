@@ -32,7 +32,9 @@ void action(GyverPortal& p) {
     int brightness = globalBrightness;
     if (ui.clickInt("brightness", brightness)) {
       globalBrightness = constrain(brightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      constrainBrightnessSettingsToGlobal();
       data.globalBrightness = globalBrightness;
+      memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
     }
 
     int modeValue = currentMode;
@@ -48,7 +50,24 @@ void action(GyverPortal& p) {
     }
     int modeBrightness = modeBrightnessLimit[modeIndex];
     if (ui.clickInt("modeBrightnessLimit", modeBrightness)) {
-      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      modeBrightnessLimit[modeIndex] = constrain(modeBrightness, MIN_BRIGHTNESS, globalBrightness);
+    }
+
+    int segmentValue = segmentBrightness[0];
+    if (ui.clickInt("segTriangle", segmentValue)) {
+      segmentBrightness[0] = constrain(segmentValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    }
+    segmentValue = segmentBrightness[1];
+    if (ui.clickInt("segCircle", segmentValue)) {
+      segmentBrightness[1] = constrain(segmentValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    }
+    segmentValue = segmentBrightness[2];
+    if (ui.clickInt("segX", segmentValue)) {
+      segmentBrightness[2] = constrain(segmentValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    }
+    segmentValue = segmentBrightness[3];
+    if (ui.clickInt("segSquare", segmentValue)) {
+      segmentBrightness[3] = constrain(segmentValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
     }
 
     int modeSpeedVal = modeSpeed[modeIndex];
@@ -91,6 +110,7 @@ void action(GyverPortal& p) {
       data.currentMode = currentMode;
       data.useLocalAddress = useLocalAddress;
       memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
+      memcpy(data.segmentBrightness, segmentBrightness, sizeof(segmentBrightness));
       memcpy(data.modeSpeed, modeSpeed, sizeof(modeSpeed));
       memcpy(data.modeSpeedOff, modeSpeedOff, sizeof(modeSpeedOff));
       memcpy(data.modePauseOn, modePauseOn, sizeof(modePauseOn));
@@ -123,6 +143,16 @@ void action(GyverPortal& p) {
     ui.updateInt("modeVal", currentMode + 1);
     String modeLabel = getModeLabel(currentMode);
     ui.updateString("modeValText", modeLabel);
+    if (ui.uri("/settings")) {
+      ui.updateInt("segTriangle", segmentBrightness[0]);
+      ui.updateInt("segTriangleVal", segmentBrightness[0]);
+      ui.updateInt("segCircle", segmentBrightness[1]);
+      ui.updateInt("segCircleVal", segmentBrightness[1]);
+      ui.updateInt("segX", segmentBrightness[2]);
+      ui.updateInt("segXVal", segmentBrightness[2]);
+      ui.updateInt("segSquare", segmentBrightness[3]);
+      ui.updateInt("segSquareVal", segmentBrightness[3]);
+    }
     if (ui.uri("/settings") && modeIndex <= 10) {
       ui.updateInt("modeBrightnessLimit", modeBrightnessLimit[modeIndex]);
       ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
