@@ -99,7 +99,7 @@ bool mode6DirectionUp[4] = {true, true, true, true};
 bool pulseDirectionUp[4] = {true, true, true, true};
 bool randomLedDirectionUp = true;
 
-uint8_t globalBrightness = 100;
+uint8_t globalBrightness = 255;
 uint8_t valueBrightness = 0;
 uint8_t counterBrightness = 0;
 uint8_t currentMode = 0;
@@ -128,30 +128,30 @@ uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 uint8_t autoModeOrderCount = AUTO_MODES_MAX;
 uint8_t autoModeOrderIndex = 0;
-uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-uint8_t segmentBrightness[countLedsPin] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS};
-uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-uint8_t modeSpeedOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-uint8_t modePauseOn[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-uint8_t modePauseOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+uint8_t modeBrightnessLimit[MODE_COUNT] = {200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200};
+uint8_t segmentBrightness[countLedsPin] = {140, MAX_BRIGHTNESS, 140, 140};
+uint8_t modeSpeed[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 10, 10};
+uint8_t modeSpeedOff[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+uint8_t modePauseOn[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+uint8_t modePauseOff[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
 bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false, false};
 
 /**************************СТРУКТУРА НАСТРОЕК В ПАМЯТИ EEPROM*************************************/
 struct SettingsData {
   bool powerOn = false;               //Состояние при включении/выключении
-  uint8_t globalBrightness = 100;     //Глобальная яркость
+  uint8_t globalBrightness = 255;     //Глобальная яркость
   uint8_t currentMode = 0;            //Текущий режим
   char ssid[20] = "SSID";             //SSID
   char pass[20] = "PASSWORD";         //Пароль
   bool useLocalAddress = false;       //Использовать локальный адрес или нет
   char localAddress[20] = "pslogo";     //Локальный адрес http://pslogo.local
   uint8_t selectedMode = 0;
-  uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
-  uint8_t segmentBrightness[4] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS};
-  uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-  uint8_t modeSpeedOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-  uint8_t modePauseOn[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
-  uint8_t modePauseOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
+  uint8_t modeBrightnessLimit[MODE_COUNT] = {200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200};
+  uint8_t segmentBrightness[4] = {140, MAX_BRIGHTNESS, 140, 140};
+  uint8_t modeSpeed[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 10, 10};
+  uint8_t modeSpeedOff[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+  uint8_t modePauseOn[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
+  uint8_t modePauseOff[MODE_COUNT] = {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3};
   bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false, false};
   uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   uint8_t autoModeOrderCount = AUTO_MODES_MAX;
@@ -163,6 +163,8 @@ void initModeState(uint8_t mode);
 bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 void sanitizeLoadedSettings();
+void applyDefaultSettings();
+bool saveSettingsToEEPROM();
 void clampModeBrightnessLimits();
 void clampSegmentBrightness();
 void constrainBrightnessSettings();
@@ -208,12 +210,7 @@ void setup() {
   EEPROM.begin(512);
   if (EEPROM.read(INIT_ADDR) != INIT_KEY) { // Проверяем на первый запуск и отсутстувие по адресу INIT_ADDR ключа INIT_KEY
     EEPROM.write(INIT_ADDR, INIT_KEY);    // Записываем ключ INIT_KEY по адресу INIT_ADDR
-    EEPROM.put(0, data);  //Записываем данные по умолчанию в память
-    if (EEPROM.commit()) { //Записываем в память
-      DEBUGLN("EEPROM successfully committed");
-    } else {
-      DEBUGLN("ERROR! EEPROM commit failed");
-    }
+    saveSettingsToEEPROM();  //Записываем данные по умолчанию в память
     DEBUGLN("Set Default Data In Memory");
   }
   delay(50);
@@ -284,6 +281,54 @@ void setup() {
   ui.enableOTA();   // OTA обновление прошивки без пароля
   //ui.enableOTA("admin", "pass");  // с паролем
   ui.downloadAuto(true);
+}
+
+bool saveSettingsToEEPROM() {
+  EEPROM.put(0, data);
+  if (EEPROM.commit()) {
+    DEBUGLN("EEPROM successfully committed");
+    return true;
+  }
+
+  DEBUGLN("ERROR! EEPROM commit failed");
+  return false;
+}
+
+void applyDefaultSettings() {
+  globalBrightness = MAX_BRIGHTNESS;
+  segmentBrightness[0] = 140;
+  segmentBrightness[1] = MAX_BRIGHTNESS;
+  segmentBrightness[2] = 140;
+  segmentBrightness[3] = 140;
+
+  for (uint8_t i = 0; i < MODE_COUNT; i++) {
+    modeBrightnessLimit[i] = 200;
+    modeSpeed[i] = (i >= 11) ? 10 : 3;
+    modeSpeedOff[i] = 3;
+    modePauseOn[i] = 3;
+    modePauseOff[i] = 3;
+    modeEnabledInAuto[i] = i < AUTO_MODES_MAX;
+  }
+
+  autoModeOrderCount = AUTO_MODES_MAX;
+  for (uint8_t i = 0; i < AUTO_MODES_MAX; i++) {
+    autoModeOrder[i] = i;
+  }
+
+  data.powerOn = powerOn;
+  data.globalBrightness = globalBrightness;
+  data.currentMode = currentMode;
+  data.useLocalAddress = useLocalAddress;
+  data.selectedMode = currentMode;
+  memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
+  memcpy(data.segmentBrightness, segmentBrightness, sizeof(segmentBrightness));
+  memcpy(data.modeSpeed, modeSpeed, sizeof(modeSpeed));
+  memcpy(data.modeSpeedOff, modeSpeedOff, sizeof(modeSpeedOff));
+  memcpy(data.modePauseOn, modePauseOn, sizeof(modePauseOn));
+  memcpy(data.modePauseOff, modePauseOff, sizeof(modePauseOff));
+  memcpy(data.modeEnabledInAuto, modeEnabledInAuto, sizeof(modeEnabledInAuto));
+  memcpy(data.autoModeOrder, autoModeOrder, sizeof(autoModeOrder));
+  data.autoModeOrderCount = autoModeOrderCount;
 }
 
 void sanitizeLoadedSettings() {
@@ -441,12 +486,7 @@ void loop() {
     Serial.println("btnMode - click");
     data.currentMode = currentMode;
     DEBUGLN("Save Settings");
-    EEPROM.put(0, data);              // сохраняем
-    if (EEPROM.commit()) {
-      DEBUGLN("EEPROM successfully committed");
-    } else {
-      DEBUGLN("ERROR! EEPROM commit failed");
-    } 
+    saveSettingsToEEPROM();
   }
 /********************************************Основной цикл работы программы**********************************************/
   if (powerTransitionState != 0 && handlePowerTransition()) return;
@@ -938,12 +978,7 @@ void changePowerState(bool on) {
   powerOn = on;
   data.powerOn = powerOn;
   DEBUGLN("Save Settings");
-  EEPROM.put(0, data);              // сохраняем
-  if (EEPROM.commit()) {
-    DEBUGLN("EEPROM successfully committed");
-  } else {
-    DEBUGLN("ERROR! EEPROM commit failed");
-  } 
+  saveSettingsToEEPROM();
 }
 
 void changeBrightness(int delta) {
@@ -965,12 +1000,7 @@ void changeBrightness(int delta) {
   data.globalBrightness = globalBrightness;
   memcpy(data.segmentBrightness, segmentBrightness, sizeof(segmentBrightness));
   DEBUGLN("Save Settings");
-  EEPROM.put(0, data);              // сохраняем
-  if (EEPROM.commit()) {
-    DEBUGLN("EEPROM successfully committed");
-  } else {
-    DEBUGLN("ERROR! EEPROM commit failed");
-  }
+  saveSettingsToEEPROM();
 }
 
 

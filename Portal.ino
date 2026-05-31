@@ -35,7 +35,7 @@ void build() {
   GP.PAGE_TITLE("PLAYSTATION LOGO");
   GP.UPDATE("power,brightness,mode,modeBrightnessLimit,segTriangle,segCircle,segX,segSquare");
   GP.ONLINE_CHECK(5000);
-  GP.RELOAD_CLICK("useLocAdd,mode");
+  GP.RELOAD_CLICK("useLocAdd,mode,btnResetSettings");
 
   if (enableAP) {
     GP.FORM_BEGIN("/connect");
@@ -142,7 +142,10 @@ void build() {
             }
             GP.BREAK();
           }
+          GP.SEND(F("<div style='display:flex;justify-content:center;gap:12px;flex-wrap:wrap;'>"));
           GP.BUTTON("btnSaveSettings", "Сохранить");
+          GP.BUTTON("btnResetSettings", "Сброс");
+          GP.SEND(F("</div>"));
         );
       );
     } else if (ui.uri("/connect")) {
