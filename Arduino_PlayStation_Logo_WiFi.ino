@@ -155,6 +155,7 @@ void initModeState(uint8_t mode);
 bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 void sanitizeLoadedSettings();
+void clampModeBrightnessLimitsToGlobal();
 
 
 const char* getModeLabel(uint8_t modeIndex) {
@@ -268,13 +269,19 @@ void sanitizeLoadedSettings() {
   data.globalBrightness = constrain(data.globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, data.globalBrightness);
     data.modeSpeed[i] = constrain(data.modeSpeed[i], 1, 10);
   }
 
   data.autoModeOrderCount = constrain(data.autoModeOrderCount, 0, AUTO_MODES_MAX);
   for (uint8_t i = 0; i < AUTO_MODES_MAX; i++) {
     data.autoModeOrder[i] = constrain(data.autoModeOrder[i], 0, MODE_COUNT - 2);
+  }
+}
+
+void clampModeBrightnessLimitsToGlobal() {
+  for (uint8_t i = 0; i < MODE_COUNT; i++) {
+    modeBrightnessLimit[i] = constrain(modeBrightnessLimit[i], MIN_BRIGHTNESS, globalBrightness);
   }
 }
 /*******************Запускаем портал с формой для подключения к WiFi************************************/
@@ -858,9 +865,12 @@ void changeBrightness(int delta) {
     globalBrightness = target;
   }
 
+  clampModeBrightnessLimitsToGlobal();
+
   Serial.print("Brightness = ");
   Serial.println(globalBrightness);
   data.globalBrightness = globalBrightness;
+  memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
   DEBUGLN("Save Settings");
   EEPROM.put(0, data);              // сохраняем
   if (EEPROM.commit()) {
