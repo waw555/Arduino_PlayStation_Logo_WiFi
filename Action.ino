@@ -32,6 +32,7 @@ void action(GyverPortal& p) {
     int brightnessValue = globalBrightness;
     if (ui.clickInt("brightness", brightnessValue)) {
       globalBrightness = constrain(brightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      clampModeBrightnessLimitsToGlobal();
       data.globalBrightness = globalBrightness;
       DEBUG("Brightness: ");
       DEBUGLN(globalBrightness);
@@ -46,6 +47,7 @@ void action(GyverPortal& p) {
       data.currentMode = currentMode;
       DEBUG("Mode: ");
       DEBUGLN(currentMode);
+      modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     }
     int modeBrightness = modeBrightnessLimit[modeIndex];
     if (ui.clickInt("modeBrightnessLimit", modeBrightness)) {
@@ -109,6 +111,9 @@ void action(GyverPortal& p) {
     String modeLabel = getModeLabel(currentMode);
     ui.updateString("modeValText", modeLabel);
     if (ui.uri("/settings")) {
+      ui.updateInt("brightness", globalBrightness);
+      ui.updateInt("brightnessSettingsVal", globalBrightness);
+      ui.updateInt("modeBrightnessLimit", modeBrightnessLimit[modeIndex]);
       ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
     }
   }
