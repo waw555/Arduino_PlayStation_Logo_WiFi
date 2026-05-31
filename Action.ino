@@ -61,19 +61,6 @@ void action(GyverPortal& p) {
       modeSpeed[modeIndex] = constrain(autoPeriodMin, 1, 60);
     }
 
-    int offTimerMinutes = data.offTimerMinutes;
-    if (ui.clickInt("offTimerMinutes", offTimerMinutes)) {
-      data.offTimerMinutes = constrain(offTimerMinutes, 0, 1440);
-      autoOffDurationMs = (uint32_t)data.offTimerMinutes * 60000UL;
-      manualOffStart = millis();
-    }
-
-    int offAtMinutes = 0;
-    if (ui.clickInt("offAtMinutes", offAtMinutes)) {
-      offAtMinutes = constrain(offAtMinutes, 0, 1440);
-      autoOffAtMillis = (offAtMinutes == 0) ? 0 : millis() + (uint32_t)offAtMinutes * 60000UL;
-    }
-
     for (uint8_t i = 0; i < 11; i++) {
       char autoModeKey[8];
       snprintf(autoModeKey, sizeof(autoModeKey), "autoM%u", i);
