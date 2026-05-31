@@ -10,12 +10,7 @@ void action(GyverPortal& p) {
     data.globalBrightness = globalBrightness;
     data.currentMode = currentMode;
 
-    EEPROM.put(0, data);
-    if (EEPROM.commit()) {
-      DEBUGLN("EEPROM successfully committed");
-    } else {
-      DEBUGLN("ERROR! EEPROM commit failed");
-    }
+    saveSettingsToEEPROM();
     delay(100);
     DEBUGLN("SYSTEM RESTART");
     ESP.restart();
@@ -125,12 +120,16 @@ void action(GyverPortal& p) {
       autoModeOrderCount = data.autoModeOrderCount;
 
       DEBUGLN("Save Settings");
-      EEPROM.put(0, data);
-      if (EEPROM.commit()) {
-        DEBUGLN("EEPROM successfully committed");
-      } else {
-        DEBUGLN("ERROR! EEPROM commit failed");
-      }
+      saveSettingsToEEPROM();
+    }
+
+    if (ui.click("btnResetSettings")) {
+      applyDefaultSettings();
+      constrainBrightnessSettings();
+      initModeState(currentMode);
+
+      DEBUGLN("Reset Settings");
+      saveSettingsToEEPROM();
     }
   }
 
