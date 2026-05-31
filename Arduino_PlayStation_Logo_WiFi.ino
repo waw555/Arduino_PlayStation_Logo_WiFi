@@ -123,9 +123,6 @@ uint16_t mode6Interval[4] = {0, 0, 0, 0};
 uint32_t mode6Timer[4] = {0, 0, 0, 0};
 uint32_t pulseLedTimer[4] = {0, 0, 0, 0};
 uint32_t autoModeTimer = 0;
-uint32_t autoOffAtMillis = 0;
-uint32_t autoOffDurationMs = 0;
-uint32_t manualOffStart = 0;
 uint32_t randomModeDelayStart = 0;
 uint32_t previousMillis, currentMillis, timerMode, randomModeDelay = 0;
 uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -150,7 +147,6 @@ struct SettingsData {
   bool modeEnabledInAuto[MODE_COUNT] = {true, true, true, true, true, true, true, true, true, true, true, false, false};
   uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
   uint8_t autoModeOrderCount = AUTO_MODES_MAX;
-  uint16_t offTimerMinutes = 0;
 };
 
 SettingsData data;  // переменная, с которой мы работаем в программе
@@ -368,15 +364,6 @@ void loop() {
   }
 /********************************************Основной цикл работы программы**********************************************/
   if (powerTransitionState != 0 && handlePowerTransition()) return;
-  if (autoOffAtMillis > 0 && millis() >= autoOffAtMillis && powerOn) {
-    changePowerState(false);
-    autoOffAtMillis = 0;
-  }
-  if (autoOffDurationMs > 0 && powerOn && millis() - manualOffStart >= autoOffDurationMs) {
-    changePowerState(false);
-    autoOffDurationMs = 0;
-  }
-
   if (powerOn){
     if ((currentMode == 11 || currentMode == 12) && millis() - autoModeTimer >= (uint32_t)modeSpeed[currentMode] * 60000UL) {
       if (currentMode == 11 || autoModeOrderCount == 0) {

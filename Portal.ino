@@ -102,10 +102,6 @@ void build() {
             }
             GP.BREAK();
           }
-          M_BOX(GP.LABEL("Таймер отключения (мин)"); GP.SPINNER("offTimerMinutes", data.offTimerMinutes, 0, 1440, 5););
-          GP.BREAK();
-          M_BOX(GP.LABEL("Отключить в (мин от старта)"); GP.SPINNER("offAtMinutes", 0, 0, 1440, 5););
-          GP.BREAK();
           GP.BUTTON("btnSaveSettings", "Сохранить");
         );
       );
