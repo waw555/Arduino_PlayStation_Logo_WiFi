@@ -144,17 +144,12 @@ void action(GyverPortal& p) {
     ui.updateString("modeValText", modeLabel);
     if (ui.uri("/settings")) {
       ui.updateInt("segTriangle", segmentBrightness[0]);
-      ui.updateInt("segTriangleVal", segmentBrightness[0]);
       ui.updateInt("segCircle", segmentBrightness[1]);
-      ui.updateInt("segCircleVal", segmentBrightness[1]);
       ui.updateInt("segX", segmentBrightness[2]);
-      ui.updateInt("segXVal", segmentBrightness[2]);
       ui.updateInt("segSquare", segmentBrightness[3]);
-      ui.updateInt("segSquareVal", segmentBrightness[3]);
     }
     if (ui.uri("/settings") && modeIndex <= 10) {
       ui.updateInt("modeBrightnessLimit", modeBrightnessLimit[modeIndex]);
-      ui.updateInt("modeBrightnessLimitVal", modeBrightnessLimit[modeIndex]);
     }
   }
 }
