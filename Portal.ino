@@ -24,7 +24,7 @@ const char* getAutoModeKey(uint8_t i) {
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal");
+  GP.UPDATE("power,brightness,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd,mode");
 
@@ -77,13 +77,15 @@ void build() {
           "НАСТРОЙКИ",
           GP.HR(); 
           GP.BREAK();
+          M_BOX(GP.LABEL("Глобальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(globalBrightness), "brightnessVal"););
+          GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
           if (modeIndex <= 10) {
             M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessValue, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(modeBrightnessValue), "modeBrightnessLimitVal"););
             GP.BREAK();
           }
-          if (modeIndex == 1) {
+          if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3 || modeIndex == 9 || modeIndex == 10) {
             M_BOX(GP.LABEL("Скорость включения"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
             GP.BREAK();
             M_BOX(GP.LABEL("Скорость выключения"); GP.SLIDER("modeSpeedOff", modeSpeedOff[modeIndex], 1, 5););
@@ -92,12 +94,12 @@ void build() {
             GP.BREAK();
             M_BOX(GP.LABEL("Пауза после выключения"); GP.SLIDER("modePauseOff", modePauseOff[modeIndex], 1, 5););
             GP.BREAK();
-          } else if (modeIndex >= 2 && modeIndex <= 10) {
+          } else if (modeIndex >= 4 && modeIndex <= 8) {
             M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
             GP.BREAK();
           }
           if (modeIndex == 11 || modeIndex == 12) {
-            M_BOX(GP.LABEL("Время смены режима (мин)"); GP.SPINNER("autoPeriodMin", modeSpeed[modeIndex], 1, 60, 1););
+            M_BOX(GP.LABEL("Время смены режима (сек)"); GP.SPINNER("autoPeriodSec", modeSpeed[modeIndex], 5, 60, 1););
             GP.BREAK();
             GP.LABEL("Список режимов для смены");
             for (uint8_t i = 0; i < 11; i++) {

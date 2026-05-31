@@ -29,6 +29,12 @@ void action(GyverPortal& p) {
       DEBUGLN(powerOn);
     }
 
+    int brightness = globalBrightness;
+    if (ui.clickInt("brightness", brightness)) {
+      globalBrightness = constrain(brightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+      data.globalBrightness = globalBrightness;
+    }
+
     int modeValue = currentMode;
     if (ui.clickInt("mode", modeValue)) {
       currentMode = constrain(modeValue, 0, MODE_COUNT - 1);
@@ -61,9 +67,9 @@ void action(GyverPortal& p) {
     if (ui.clickInt("modePauseOff", modePauseOffVal)) {
       modePauseOff[modeIndex] = constrain(modePauseOffVal, 1, 5);
     }
-    int autoPeriodMin = modeSpeed[modeIndex];
-    if (ui.clickInt("autoPeriodMin", autoPeriodMin) && (modeIndex == 11 || modeIndex == 12)) {
-      modeSpeed[modeIndex] = constrain(autoPeriodMin, 1, 60);
+    int autoPeriodSec = modeSpeed[modeIndex];
+    if (ui.clickInt("autoPeriodSec", autoPeriodSec) && (modeIndex == 11 || modeIndex == 12)) {
+      modeSpeed[modeIndex] = constrain(autoPeriodSec, 5, 60);
     }
 
     for (uint8_t i = 0; i < 11; i++) {
@@ -112,6 +118,7 @@ void action(GyverPortal& p) {
   if (ui.update()) {
     uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     ui.updateBool("power", powerOn);
+    ui.updateInt("brightness", globalBrightness);
     ui.updateInt("brightnessVal", globalBrightness);
     ui.updateInt("modeVal", currentMode + 1);
     String modeLabel = getModeLabel(currentMode);
