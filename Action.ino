@@ -87,7 +87,7 @@ void action(GyverPortal& p) {
     }
     int autoPeriodSec = modeSpeed[modeIndex];
     if (ui.clickInt("autoPeriodSec", autoPeriodSec) && (modeIndex == 11 || modeIndex == 12)) {
-      modeSpeed[modeIndex] = constrain(autoPeriodSec, 5, 60);
+      modeSpeed[modeIndex] = constrain(autoPeriodSec, 1, 60);
     }
 
     for (uint8_t i = 0; i < 11; i++) {
@@ -138,10 +138,7 @@ void action(GyverPortal& p) {
     uint8_t modeIndex = constrain(currentMode, 0, MODE_COUNT - 1);
     ui.updateBool("power", powerOn);
     ui.updateInt("brightness", globalBrightness);
-    ui.updateInt("brightnessVal", globalBrightness);
-    ui.updateInt("modeVal", currentMode + 1);
-    String modeLabel = getModeLabel(currentMode);
-    ui.updateString("modeValText", modeLabel);
+    ui.updateInt("mode", currentMode);
     if (ui.uri("/settings")) {
       ui.updateInt("segTriangle", segmentBrightness[0]);
       ui.updateInt("segCircle", segmentBrightness[1]);

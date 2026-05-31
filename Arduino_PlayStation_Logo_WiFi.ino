@@ -293,7 +293,7 @@ void sanitizeLoadedSettings() {
 
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
     data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-    data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 5, 60) : constrain(data.modeSpeed[i], 1, 5);
+    data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 1, 60) : constrain(data.modeSpeed[i], 1, 5);
     data.modeSpeedOff[i] = constrain(data.modeSpeedOff[i], 1, 5);
     data.modePauseOn[i] = constrain(data.modePauseOn[i], 1, 5);
     data.modePauseOff[i] = constrain(data.modePauseOff[i], 1, 5);
