@@ -21,10 +21,19 @@ const char* getAutoModeKey(uint8_t i) {
   static const char* keys[] = {"autoM0", "autoM1", "autoM2", "autoM3", "autoM4", "autoM5", "autoM6", "autoM7", "autoM8", "autoM9", "autoM10"};
   return (i < 11) ? keys[i] : "autoM0";
 }
+
+void settingsSliderRow(const char* label, const char* name, int value, int minValue, int maxValue) {
+  M_BOX(GP_JUSTIFY,
+    GP.LABEL(label);
+    GP.SEND(F("<span style='display:inline-flex;justify-content:center;align-items:center;width:72%;'>"));
+    GP.SLIDER(name, value, minValue, maxValue);
+    GP.SEND(F("</span>"));
+  );
+}
 void build() {
   GP.BUILD_BEGIN(GP_DARK);
   GP.PAGE_TITLE("PLAYSTATION LOGO");
-  GP.UPDATE("power,brightness,brightnessVal,modeVal,modeValText,modeBrightnessLimit,modeBrightnessLimitVal,segTriangle,segTriangleVal,segCircle,segCircleVal,segX,segXVal,segSquare,segSquareVal");
+  GP.UPDATE("power,brightness,brightnessVal,modeVal,modeValText,modeBrightnessLimit,segTriangle,segCircle,segX,segSquare");
   GP.ONLINE_CHECK(5000);
   GP.RELOAD_CLICK("useLocAdd,mode");
 
@@ -76,34 +85,34 @@ void build() {
           "НАСТРОЙКИ",
           GP.HR(); 
           GP.BREAK();
-          M_BOX(GP.LABEL("Глобальная яркость"); GP.SLIDER("brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(globalBrightness), "brightnessVal"););
+          settingsSliderRow("Глобальная яркость", "brightness", globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
           GP.LABEL("Яркость сегментов");
-          M_BOX(GP.LABEL("Треугольник"); GP.SLIDER("segTriangle", segmentBrightness[0], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[0]), "segTriangleVal"););
+          settingsSliderRow("Треугольник", "segTriangle", segmentBrightness[0], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
-          M_BOX(GP.LABEL("Круг"); GP.SLIDER("segCircle", segmentBrightness[1], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[1]), "segCircleVal"););
+          settingsSliderRow("Круг", "segCircle", segmentBrightness[1], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
-          M_BOX(GP.LABEL("Крест"); GP.SLIDER("segX", segmentBrightness[2], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[2]), "segXVal"););
+          settingsSliderRow("Крест", "segX", segmentBrightness[2], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
-          M_BOX(GP.LABEL("Квадрат"); GP.SLIDER("segSquare", segmentBrightness[3], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(segmentBrightness[3]), "segSquareVal"););
+          settingsSliderRow("Квадрат", "segSquare", segmentBrightness[3], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
           GP.BREAK();
           M_BOX(GP.LABEL("Режим"); GP.SELECT("mode", (char**)getModeLabels(), modeIndex, false););
           GP.BREAK();
           if (modeIndex <= 10) {
-            M_BOX(GP.LABEL("Яркость режима"); GP.SLIDER("modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, MAX_BRIGHTNESS); GP.LABEL_BLOCK(String(modeBrightnessLimit[modeIndex]), "modeBrightnessLimitVal"););
+            settingsSliderRow("Яркость режима", "modeBrightnessLimit", modeBrightnessLimit[modeIndex], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
             GP.BREAK();
           }
           if (modeIndex == 1 || modeIndex == 2 || modeIndex == 3 || modeIndex == 9 || modeIndex == 10) {
-            M_BOX(GP.LABEL("Скорость включения"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
+            settingsSliderRow("Скорость включения", "modeSpeed", modeSpeed[modeIndex], 1, 5);
             GP.BREAK();
-            M_BOX(GP.LABEL("Скорость выключения"); GP.SLIDER("modeSpeedOff", modeSpeedOff[modeIndex], 1, 5););
+            settingsSliderRow("Скорость выключения", "modeSpeedOff", modeSpeedOff[modeIndex], 1, 5);
             GP.BREAK();
-            M_BOX(GP.LABEL("Пауза после включения"); GP.SLIDER("modePauseOn", modePauseOn[modeIndex], 1, 5););
+            settingsSliderRow("Пауза после включения", "modePauseOn", modePauseOn[modeIndex], 1, 5);
             GP.BREAK();
-            M_BOX(GP.LABEL("Пауза после выключения"); GP.SLIDER("modePauseOff", modePauseOff[modeIndex], 1, 5););
+            settingsSliderRow("Пауза после выключения", "modePauseOff", modePauseOff[modeIndex], 1, 5);
             GP.BREAK();
           } else if (modeIndex >= 4 && modeIndex <= 8) {
-            M_BOX(GP.LABEL("Скорость эффекта"); GP.SLIDER("modeSpeed", modeSpeed[modeIndex], 1, 5););
+            settingsSliderRow("Скорость эффекта", "modeSpeed", modeSpeed[modeIndex], 1, 5);
             GP.BREAK();
           }
           if (modeIndex == 11 || modeIndex == 12) {
