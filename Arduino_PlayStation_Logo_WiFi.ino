@@ -45,7 +45,7 @@
 #endif
 
 #define INIT_ADDR 500  // номер резервной ячейки для инициализации и первой проверки памяти
-#define INIT_KEY 52     // При любых изменениях в структурированных данных измените ключ  или стирайте память при прошивке.
+#define INIT_KEY 53     // При любых изменениях в структурированных данных измените ключ  или стирайте память при прошивке.
 
 //ВЫХОДЫ НА ПОДСВЕТКУ
 #define LED_PIN_TRIANGLE 12     //  Пин - Треугольник
@@ -129,6 +129,7 @@ uint8_t autoModeOrder[AUTO_MODES_MAX] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 uint8_t autoModeOrderCount = AUTO_MODES_MAX;
 uint8_t autoModeOrderIndex = 0;
 uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+uint8_t segmentBrightness[countLedsPin] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS};
 uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
 uint8_t modeSpeedOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
 uint8_t modePauseOn[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
@@ -146,6 +147,7 @@ struct SettingsData {
   char localAddress[20] = "pslogo";     //Локальный адрес http://pslogo.local
   uint8_t selectedMode = 0;
   uint8_t modeBrightnessLimit[MODE_COUNT] = {100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100};
+  uint8_t segmentBrightness[4] = {MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS, MAX_BRIGHTNESS};
   uint8_t modeSpeed[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
   uint8_t modeSpeedOff[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
   uint8_t modePauseOn[MODE_COUNT] = {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5};
@@ -162,12 +164,16 @@ bool handlePowerTransition();
 void runCurrentMode(uint8_t modeToRun);
 void sanitizeLoadedSettings();
 void clampModeBrightnessLimits();
+void clampSegmentBrightness();
+void constrainBrightnessSettingsToGlobal();
 uint8_t getModeBrightness(uint8_t mode);
 uint16_t getModeFadeInterval(uint8_t mode);
 uint16_t getModeFadeOffInterval(uint8_t mode);
 uint32_t getModePauseOnMs(uint8_t mode);
 uint32_t getModePauseOffMs(uint8_t mode);
 uint8_t scaleModeBrightness(uint8_t level, uint8_t mode);
+uint8_t scaleSegmentBrightness(uint8_t brightness, uint8_t segment);
+void writeLedBrightness(uint8_t segment, uint8_t brightness);
 
 
 const char* getModeLabel(uint8_t modeIndex) {
@@ -221,6 +227,8 @@ void setup() {
 
   oldMode = currentMode;
   memcpy(modeBrightnessLimit, data.modeBrightnessLimit, sizeof(modeBrightnessLimit));
+  memcpy(segmentBrightness, data.segmentBrightness, sizeof(segmentBrightness));
+  constrainBrightnessSettingsToGlobal();
   memcpy(modeSpeed, data.modeSpeed, sizeof(modeSpeed));
   memcpy(modeSpeedOff, data.modeSpeedOff, sizeof(modeSpeedOff));
   memcpy(modePauseOn, data.modePauseOn, sizeof(modePauseOn));
@@ -284,11 +292,15 @@ void sanitizeLoadedSettings() {
   data.globalBrightness = constrain(data.globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
 
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, data.globalBrightness);
     data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 5, 60) : constrain(data.modeSpeed[i], 1, 5);
     data.modeSpeedOff[i] = constrain(data.modeSpeedOff[i], 1, 5);
     data.modePauseOn[i] = constrain(data.modePauseOn[i], 1, 5);
     data.modePauseOff[i] = constrain(data.modePauseOff[i], 1, 5);
+  }
+
+  for (uint8_t i = 0; i < 4; i++) {
+    data.segmentBrightness[i] = constrain(data.segmentBrightness[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
   }
 
   data.autoModeOrderCount = constrain(data.autoModeOrderCount, 0, AUTO_MODES_MAX);
@@ -299,12 +311,25 @@ void sanitizeLoadedSettings() {
 
 void clampModeBrightnessLimits() {
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
-    modeBrightnessLimit[i] = constrain(modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+    modeBrightnessLimit[i] = constrain(modeBrightnessLimit[i], MIN_BRIGHTNESS, globalBrightness);
   }
 }
 
+void clampSegmentBrightness() {
+  for (uint8_t i = 0; i < countLedsPin; i++) {
+    segmentBrightness[i] = constrain(segmentBrightness[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+  }
+}
+
+void constrainBrightnessSettingsToGlobal() {
+  globalBrightness = constrain(globalBrightness, MIN_BRIGHTNESS, MAX_BRIGHTNESS);
+  clampModeBrightnessLimits();
+  clampSegmentBrightness();
+}
+
 uint8_t getModeBrightness(uint8_t mode) {
-  return modeBrightnessLimit[constrain(mode, 0, MODE_COUNT - 1)];
+  uint8_t modeIndex = constrain(mode, 0, MODE_COUNT - 1);
+  return min<uint8_t>(modeBrightnessLimit[modeIndex], globalBrightness);
 }
 
 uint16_t getModeFadeInterval(uint8_t mode) {
@@ -327,6 +352,16 @@ uint32_t getModePauseOffMs(uint8_t mode) {
 
 uint8_t scaleModeBrightness(uint8_t level, uint8_t mode) {
   return ((uint16_t)level * getModeBrightness(mode)) / MAX_BRIGHTNESS;
+}
+
+uint8_t scaleSegmentBrightness(uint8_t brightness, uint8_t segment) {
+  uint8_t segmentIndex = constrain(segment, 0, countLedsPin - 1);
+  return ((uint16_t)brightness * segmentBrightness[segmentIndex]) / MAX_BRIGHTNESS;
+}
+
+void writeLedBrightness(uint8_t segment, uint8_t brightness) {
+  uint8_t segmentIndex = constrain(segment, 0, countLedsPin - 1);
+  analogWrite(ledPin[segmentIndex], scaleSegmentBrightness(brightness, segmentIndex));
 }
 /*******************Запускаем портал с формой для подключения к WiFi************************************/
 void startAPAndFormForConnectToWIFI() {
@@ -471,7 +506,7 @@ void runCurrentMode(uint8_t modeToRun) {
           if (mode2Step == 0) {
             timerMode = millis();  // Плавно включаем фигуры: Треугольник -> Круг -> Крест -> Квадрат
             counterBrightness++;
-            analogWrite(ledPin[val], crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
+            writeLedBrightness(val, crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
             if (counterBrightness == 255) {
               counterBrightness = 0;
               val++;
@@ -485,7 +520,7 @@ void runCurrentMode(uint8_t modeToRun) {
             timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
-              analogWrite(ledPin[val], crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
+              writeLedBrightness(val, crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
             }
             if (counterBrightness == 255) {
               counterBrightness = 0;
@@ -513,7 +548,7 @@ void runCurrentMode(uint8_t modeToRun) {
           if (mode2Step == 0) {
             timerMode = millis();  // Плавно включаем фигуры: Квадрат -> Крест -> Круг -> Треугольник
             counterBrightness++;
-            analogWrite(ledPin[val], crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
+            writeLedBrightness(val, crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
             if (counterBrightness == 255) {
               counterBrightness = 0;
               if (val == 0) {
@@ -528,7 +563,7 @@ void runCurrentMode(uint8_t modeToRun) {
             timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
-              analogWrite(ledPin[val], crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
+              writeLedBrightness(val, crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
             }
             if (counterBrightness == 255) {
               counterBrightness = 0;
@@ -581,7 +616,7 @@ void runCurrentMode(uint8_t modeToRun) {
         }
 
         for (uint8_t i = 0; i < countLedsPin; i++) {
-          analogWrite(ledPin[i], crt3_8(randomLedBrightness[i]));
+          writeLedBrightness(i, crt3_8(randomLedBrightness[i]));
         }
           break;
       case 5:
@@ -624,7 +659,7 @@ void runCurrentMode(uint8_t modeToRun) {
               mode6Interval[i] = random(getModeFadeInterval(modeToRun), getModeFadeInterval(modeToRun) + 16);
             }
           }
-          analogWrite(ledPin[i], crt3_8(mode6Brightness[i]));
+          writeLedBrightness(i, crt3_8(mode6Brightness[i]));
         }
           break;
       case 7:
@@ -638,7 +673,7 @@ void runCurrentMode(uint8_t modeToRun) {
             randomLedBrightness[randomLedIndex] = getModeBrightness(modeToRun);
           }
         }
-        for (uint8_t i = 0; i < countLedsPin; i++) analogWrite(ledPin[i], crt3_8(randomLedBrightness[i]));
+        for (uint8_t i = 0; i < countLedsPin; i++) writeLedBrightness(i, crt3_8(randomLedBrightness[i]));
           break;
       case 8:
         if (millis() - timerMode >= getModeFadeInterval(modeToRun)) {
@@ -668,7 +703,7 @@ void runCurrentMode(uint8_t modeToRun) {
                 mode8Active[i] = false;
               }
             }
-            analogWrite(ledPin[i], crt3_8(mode8Brightness[i]));
+            writeLedBrightness(i, crt3_8(mode8Brightness[i]));
           }
         }
           break;
@@ -677,7 +712,7 @@ void runCurrentMode(uint8_t modeToRun) {
           if (mode2Step == 0) {
             timerMode = millis();
             counterBrightness++;
-            analogWrite(ledPin[val], crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
+            writeLedBrightness(val, crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
             if (counterBrightness == 255) {
               counterBrightness = 0;
               val++;
@@ -691,7 +726,7 @@ void runCurrentMode(uint8_t modeToRun) {
             timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
-              analogWrite(ledPin[val], crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
+              writeLedBrightness(val, crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
             }
             if (counterBrightness == 255) {
               counterBrightness = 0;
@@ -718,7 +753,7 @@ void runCurrentMode(uint8_t modeToRun) {
           if (mode2Step == 0) {
             timerMode = millis();
             counterBrightness++;
-            analogWrite(ledPin[val], crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
+            writeLedBrightness(val, crt3_8(scaleModeBrightness(counterBrightness, modeToRun)));
             if (counterBrightness == 255) {
               counterBrightness = 0;
               if (val == 0) {
@@ -733,7 +768,7 @@ void runCurrentMode(uint8_t modeToRun) {
             timerMode = millis();
             if (counterBrightness < 255) {
               counterBrightness++;
-              analogWrite(ledPin[val], crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
+              writeLedBrightness(val, crt3_8(scaleModeBrightness(255 - counterBrightness, modeToRun)));
             }
             if (counterBrightness == 255) {
               counterBrightness = 0;
@@ -868,10 +903,10 @@ void setLedsOff() {
 }
 /* ==========================================Установить светодиодам заданную яркость===============================*/
 void setLedsBrightness(uint8_t ledBrightnessTriangle, uint8_t ledBrightnessCircle, uint8_t ledBrightnessX, uint8_t ledBrightnessSquare){
-  analogWrite(LED_PIN_TRIANGLE, ledBrightnessTriangle);
-  analogWrite(LED_PIN_CIRCLE, ledBrightnessCircle);
-  analogWrite(LED_PIN_X, ledBrightnessX);
-  analogWrite(LED_PIN_SQUARE, ledBrightnessSquare);
+  writeLedBrightness(0, ledBrightnessTriangle);
+  writeLedBrightness(1, ledBrightnessCircle);
+  writeLedBrightness(2, ledBrightnessX);
+  writeLedBrightness(3, ledBrightnessSquare);
 }
 
 void showMinMaxBrightness(){
@@ -923,12 +958,13 @@ void changeBrightness(int delta) {
     globalBrightness = target;
   }
 
-  clampModeBrightnessLimits();
+  constrainBrightnessSettingsToGlobal();
 
   Serial.print("Brightness = ");
   Serial.println(globalBrightness);
   data.globalBrightness = globalBrightness;
   memcpy(data.modeBrightnessLimit, modeBrightnessLimit, sizeof(modeBrightnessLimit));
+  memcpy(data.segmentBrightness, segmentBrightness, sizeof(segmentBrightness));
   DEBUGLN("Save Settings");
   EEPROM.put(0, data);              // сохраняем
   if (EEPROM.commit()) {
