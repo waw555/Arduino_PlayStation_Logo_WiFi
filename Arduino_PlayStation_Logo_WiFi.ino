@@ -76,7 +76,7 @@
 #define LIGHTNING_FADE_INTERVAL 12UL        //
 #define LIGHTNING_FADE_STEP_DOWN_MODE_7_8 1 //
 #define POWER_OFF_FADE_INTERVAL 10UL        //
-#define AUTO_MODE_INTERVAL 60000UL          //Время изменения режимов в автоматическом режиме
+#define AUTO_MODE_INTERVAL 5000UL           //Минимальное время изменения режимов в автоматическом режиме (5 секунд)
 #define MODE_COUNT 13
 #define AUTO_MODES_MAX 11
 
@@ -285,7 +285,7 @@ void sanitizeLoadedSettings() {
 
   for (uint8_t i = 0; i < MODE_COUNT; i++) {
     data.modeBrightnessLimit[i] = constrain(data.modeBrightnessLimit[i], MIN_BRIGHTNESS, MAX_BRIGHTNESS);
-    data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 1, 60) : constrain(data.modeSpeed[i], 1, 5);
+    data.modeSpeed[i] = (i >= 11) ? constrain(data.modeSpeed[i], 5, 60) : constrain(data.modeSpeed[i], 1, 5);
     data.modeSpeedOff[i] = constrain(data.modeSpeedOff[i], 1, 5);
     data.modePauseOn[i] = constrain(data.modePauseOn[i], 1, 5);
     data.modePauseOff[i] = constrain(data.modePauseOff[i], 1, 5);
@@ -416,7 +416,7 @@ void loop() {
 /********************************************Основной цикл работы программы**********************************************/
   if (powerTransitionState != 0 && handlePowerTransition()) return;
   if (powerOn){
-    if ((currentMode == 11 || currentMode == 12) && millis() - autoModeTimer >= (uint32_t)modeSpeed[currentMode] * 60000UL) {
+    if ((currentMode == 11 || currentMode == 12) && millis() - autoModeTimer >= (uint32_t)modeSpeed[currentMode] * 1000UL) {
       if (currentMode == 11 || autoModeOrderCount == 0) {
         autoModeCurrent = random(0, 11);
       } else {
@@ -467,7 +467,7 @@ void runCurrentMode(uint8_t modeToRun) {
           break;
       }
       case 2:
-        if (millis() - timerMode >= getModeFadeInterval(modeToRun)){
+        if (millis() - timerMode >= ((mode2Step == 2) ? getModeFadeOffInterval(modeToRun) : getModeFadeInterval(modeToRun))){
           if (mode2Step == 0) {
             timerMode = millis();  // Плавно включаем фигуры: Треугольник -> Круг -> Крест -> Квадрат
             counterBrightness++;
@@ -498,18 +498,18 @@ void runCurrentMode(uint8_t modeToRun) {
             }
           }
         }
-        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
+        if (mode2Step == 1 && millis() - timerMode >= getModePauseOnMs(modeToRun)) {  // Пауза во включенном состоянии
           mode2Step = 2;
           val = countLedsPin - 1;
           counterBrightness = 0;
-        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
+        } else if (mode2Step == 3 && millis() - timerMode >= getModePauseOffMs(modeToRun)) {  // Пауза в выключенном состоянии
           mode2Step = 0;
           val = 0;
           counterBrightness = 0;
         }
           break;
       case 3:
-        if (millis() - timerMode >= getModeFadeInterval(modeToRun)){
+        if (millis() - timerMode >= ((mode2Step == 2) ? getModeFadeOffInterval(modeToRun) : getModeFadeInterval(modeToRun))){
           if (mode2Step == 0) {
             timerMode = millis();  // Плавно включаем фигуры: Квадрат -> Крест -> Круг -> Треугольник
             counterBrightness++;
@@ -541,11 +541,11 @@ void runCurrentMode(uint8_t modeToRun) {
             }
           }
         }
-        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {  // Пауза 5 сек во включенном состоянии
+        if (mode2Step == 1 && millis() - timerMode >= getModePauseOnMs(modeToRun)) {  // Пауза во включенном состоянии
           mode2Step = 2;
           val = 0;
           counterBrightness = 0;
-        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {  // Пауза 5 сек в выключенном состоянии
+        } else if (mode2Step == 3 && millis() - timerMode >= getModePauseOffMs(modeToRun)) {  // Пауза в выключенном состоянии
           mode2Step = 0;
           val = countLedsPin - 1;
           counterBrightness = 0;
@@ -673,7 +673,7 @@ void runCurrentMode(uint8_t modeToRun) {
         }
           break;
       case 9:
-        if (millis() - timerMode >= getModeFadeInterval(modeToRun)){
+        if (millis() - timerMode >= ((mode2Step == 2) ? getModeFadeOffInterval(modeToRun) : getModeFadeInterval(modeToRun))){
           if (mode2Step == 0) {
             timerMode = millis();
             counterBrightness++;
@@ -703,18 +703,18 @@ void runCurrentMode(uint8_t modeToRun) {
             }
           }
         }
-        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {
+        if (mode2Step == 1 && millis() - timerMode >= getModePauseOnMs(modeToRun)) {
           mode2Step = 2;
           val = 0;
           counterBrightness = 0;
-        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {
+        } else if (mode2Step == 3 && millis() - timerMode >= getModePauseOffMs(modeToRun)) {
           mode2Step = 0;
           val = 0;
           counterBrightness = 0;
         }
           break;
       case 10:
-        if (millis() - timerMode >= getModeFadeInterval(modeToRun)){
+        if (millis() - timerMode >= ((mode2Step == 2) ? getModeFadeOffInterval(modeToRun) : getModeFadeInterval(modeToRun))){
           if (mode2Step == 0) {
             timerMode = millis();
             counterBrightness++;
@@ -746,11 +746,11 @@ void runCurrentMode(uint8_t modeToRun) {
             }
           }
         }
-        if (mode2Step == 1 && millis() - timerMode >= HOLD_ON_TIME_MODE_2) {
+        if (mode2Step == 1 && millis() - timerMode >= getModePauseOnMs(modeToRun)) {
           mode2Step = 2;
           val = countLedsPin - 1;
           counterBrightness = 0;
-        } else if (mode2Step == 3 && millis() - timerMode >= HOLD_OFF_TIME_MODE_2) {
+        } else if (mode2Step == 3 && millis() - timerMode >= getModePauseOffMs(modeToRun)) {
           mode2Step = 0;
           val = countLedsPin - 1;
           counterBrightness = 0;
